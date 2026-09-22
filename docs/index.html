@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="OPSD-V: real long-video context for on-policy post-training of few-step autoregressive video generators. Anonymous supplementary results.">
+  <title>OPSD-V · Anonymous Supplementary Results</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=wording-8">
+  <script defer src="app.js?v=streaming-3"></script>
+</head>
+<body>
+  <a class="skip" href="#results">Skip to video comparisons</a>
+  <header class="site-header"><a class="wordmark" href="#top">OPSD-V<span> / supplementary results</span></a><nav aria-label="Main navigation"><a href="#results">Results</a><a href="#motivation">Motivation</a><a href="#method">Method</a><a href="#evaluation">Evaluation</a><a href="#ablations">Ablation Study</a><a href="#more">More Comparisons</a></nav></header>
+  <main id="top">
+    <section class="hero">
+      <p class="eyebrow">Anonymous submission · ICLR 2027</p>
+      <h1>OPSD-V</h1>
+      <p class="paper-title">On-Policy Self-Distillation for Post-Training<br class="desktop-break"> Few-Step Autoregressive Video Generators</p>
+      <p class="authors">Anonymous Authors</p>
+      <p class="hero-summary">Cache-aware on-policy self-distillation with real long-video context.<br><strong>Improved long-horizon generation with the original four-step sampler.</strong></p>
+      <div class="hero-links"><a class="primary-link" href="#results">Video Comparisons <span aria-hidden="true">↓</span></a><a href="#method">Method Overview <span aria-hidden="true">↗</span></a></div>
+    </section>
+
+    <section id="results" class="section results-section">
+      <div class="section-heading"><div><p class="eyebrow">01 / Qualitative results</p><h2>Qualitative Comparison</h2></div><p>Comparison of the base model, SFT, RL-based post-training with Astrolabe, and OPSD-V using the same prompt and seed.</p></div>
+      <div class="tabs" role="tablist" aria-label="Main comparison backbone"><button id="tab-ll" role="tab" aria-selected="true" aria-controls="main-comparison" data-main="0">LongLive <span>6 examples</span></button><button id="tab-sf" role="tab" aria-selected="false" aria-controls="main-comparison" data-main="1" tabindex="-1">Self-Forcing <span>6 examples</span></button></div>
+      <div class="featured-navigation"><p id="featured-count" aria-live="polite"></p><div><button id="featured-previous" aria-label="Previous featured example">← Previous</button><button id="featured-next" aria-label="Next featured example">Next →</button></div></div>
+      <div id="main-comparison" role="tabpanel" aria-labelledby="tab-ll"></div>
+      <div id="featured-examples" class="featured-examples" aria-label="Featured examples"></div>
+      <p class="under-note">Preview frames: 30 s. Playback starts at 0:00. Original videos · 832 × 480 · 16 FPS · four denoising steps.</p>
+    </section>
+
+    <section id="motivation" class="section">
+      <div class="section-heading"><div><p class="eyebrow">02 / Motivation</p><h2>Inference-Time Cache Intervention</h2></div></div>
+      <p class="lead">To examine how cached history affects long-horizon generation, we provide real-video context to the original LongLive model at inference, before any OPSD-V post-training.</p>
+      <figure class="paper-figure"><a href="assets/figures/motivation.png" target="_blank" rel="noopener" aria-label="Open motivation figure at full resolution"><img src="assets/figures/motivation.png" alt="Motivation for OPSD-V: the student uses generated temporal history while real-video context supplies a cleaner teacher cache. Below, LongLive rollouts compare generated and data context." loading="lazy"></a></figure>
+      <div class="subsection-heading"><h3>LongLive Before Post-Training</h3><label class="select-label">Example <select id="motivation-select" aria-label="Motivation example"></select></label></div>
+      <p class="experiment-description"><strong>Experimental setup.</strong> Both rollouts initialize their KV caches with the same real-video first chunk. The baseline then builds its history from generated chunks. In the intervention, older cached history is replaced with KV features computed from the corresponding real-video chunks, while the latest model-generated chunk is retained for autoregressive continuation. Model parameters and the four-step sampler remain unchanged. The source video is shown as a reference.</p>
+      <div id="motivation-comparison"></div>
+      <p class="experiment-description experiment-observation"><strong>Observation.</strong> The more stable rollout suggests that degradation in generated cache history contributes to long-horizon errors. This motivates using real-video context to construct cleaner teacher targets during OPSD-V training. At deployment, OPSD-V retains the original inference procedure without this real-video cache intervention.</p>
+    </section>
+
+    <section id="method" class="section">
+      <div class="section-heading"><div><p class="eyebrow">03 / Method</p><h2>Method Overview</h2></div></div>
+      <p class="lead">OPSD-V is a cache-aware on-policy self-distillation framework for few-step autoregressive video generators. Real long videos provide privileged temporal context for an exponential-moving-average (EMA) teacher that provides velocity targets at the student’s own noisy rollout states.</p>
+      <figure class="paper-figure"><a href="assets/figures/pipeline.png" target="_blank" rel="noopener" aria-label="Open method figure at full resolution"><img src="assets/figures/pipeline.png" alt="OPSD-V pipeline showing the student rollout, teacher with real-video temporal context, and velocity matching at every denoising step." loading="lazy"></a></figure>
+      <div class="method-steps"><article><span>01</span><h3>Student On-Policy Rollout</h3><p>The student and teacher use the same real first chunk as an attention sink. The student then follows the original four-step sampler and writes its generated chunks into its own KV cache.</p></article><article><span>02</span><h3>Real-Video Teacher Cache</h3><p>The teacher evaluates the same student noisy states using older real-video history. Its latest cache chunk is its own clean estimate from the preceding chunk’s final student noisy state.</p></article><article><span>03</span><h3>Dense Denoising-Level Objective</h3><p>Velocity matching supervises all four denoising steps from chunk 8 onward. Per-step backward limits memory use during long-rollout training.</p></article></div>
+      <p class="method-takeaway">At inference, the teacher is removed; the original four-step sampler and inference-time KV-cache mechanism remain unchanged.</p>
+    </section>
+
+    <section id="evaluation" class="section">
+      <div class="section-heading"><div><p class="eyebrow">04 / Evaluation</p><h2>Quantitative Comparison</h2></div></div>
+      <p class="lead">OPSD-V improves Quality and Dynamic Degree on both backbones, with small decreases in Semantic scores relative to the base models.</p>
+      <div id="main-table" class="table-wrap"></div>
+      <p class="table-note"><span class="best">Red</span>: best. <span class="second">Blue</span>: second-best, within each backbone. ↑ Higher is better.</p>
+      <details class="details"><summary>Evaluation and metric definitions</summary><div><p>Results average MovieGenBench and MeiBench equally, using 120 prompts from each benchmark and one video per prompt. Videos are approximately one minute long, generated at 16 FPS with four denoising steps.</p><p><strong>Quality (6)</strong> averages subject consistency, background consistency, aesthetic quality, imaging quality, motion smoothness, and dynamic degree. <strong>Semantic (6)</strong> averages object class, multiple objects, color, scene, appearance style, and overall consistency. These are unweighted means of raw dimension scores. Dynamic Degree uses 5-second windows and is also reported separately.</p></div></details>
+      <div class="subsection-heading"><h3>User Study</h3><p>OPSD-V compared with its corresponding base model.</p></div>
+      <div class="study-legend"><span><i class="swatch ours"></i>OPSD-V</span><span><i class="swatch tie"></i>Tie</span><span><i class="swatch base"></i>Base model</span></div>
+      <div id="user-study" class="study-grid"></div>
+      <details class="details"><summary>User study protocol</summary><div><p>Ten participants each compare 20 paired videos: 10 LongLive pairs and 10 Self-Forcing pairs. Each pair is shown with its prompt. Participants choose Model A, Model B, or Same for overall preference, motion quality, and visual quality. Percentages above include ties.</p></div></details>
+    </section>
+
+    <section id="ablations" class="section">
+      <div class="section-heading"><div><p class="eyebrow">05 / Ablation results</p><h2>Ablation Study</h2></div></div>
+      <p class="lead">We evaluate three components of OPSD-V on LongLive: the prediction space, the supervised denoising steps, and the teacher-cache update. All variants retain the original four-step inference procedure.</p>
+      <div class="featured-navigation"><p id="ablation-count" aria-live="polite"></p><div><button id="ablation-previous" aria-label="Previous ablation example">← Previous</button><button id="ablation-next" aria-label="Next ablation example">Next →</button></div></div>
+      <div id="ablation-comparison"></div>
+      <div id="ablation-examples" class="featured-examples ablation-examples" role="group" aria-label="Ablation examples"></div>
+      <p class="under-note">Each comparison shows the first 30 seconds with the same prompt and seed across all four variants. Preview frames are at 15 s; playback starts at 0:00.</p>
+      <details id="ablation-detail" class="details"><summary id="ablation-detail-summary">Enlarged details</summary><div><figure class="paper-figure"><a id="ablation-detail-link" target="_blank" rel="noopener" aria-label="Open selected ablation detail figure at full resolution"><img id="ablation-detail-image" alt="" loading="lazy"></a><figcaption id="ablation-detail-caption"></figcaption></figure></div></details>
+      <div class="method-steps ablation-notes"><article><h3>Prediction Space</h3><p>Replacing velocity matching with clean-latent (x₀) matching reduces Quality and Dynamic Degree.</p></article><article><h3>Denoising-Step Supervision</h3><p>Supervising only the first denoising step leaves the remaining three steps without direct supervision.</p></article><article><h3>Teacher-Cache Update</h3><p>Using the student’s latest chunk in the teacher cache yields weaker local detail than the teacher’s own clean estimate.</p></article></div>
+      <div id="ablation-table" class="table-wrap"></div>
+      <p class="table-note"><span class="best">Red</span>: best. <span class="second">Blue</span>: second-best. Scores are averaged equally over the two benchmarks.</p>
+    </section>
+
+    <section id="more" class="section">
+      <div class="section-heading"><div><p class="eyebrow">06 / Additional results</p><h2>Additional Qualitative Comparisons</h2></div><p>Further comparisons of the base model, SFT, Astrolabe, and OPSD-V. Preview frames are at 30 s; playback starts at 0:00.</p></div>
+      <div class="filters"><label>Backbone<select id="filter-backbone"><option value="all">Both backbones</option><option>LongLive</option><option>Self-Forcing</option></select></label><label>Benchmark<select id="filter-benchmark"><option value="all">Both benchmarks</option><option>MovieGenBench</option><option>MeiBench</option></select></label><label>Example focus<select id="filter-category"><option value="all">All examples</option><option value="quality">Visual quality</option><option value="dynamics">Motion dynamics</option><option value="both">Quality + dynamics</option></select></label><span id="result-count" role="status"></span></div>
+      <div id="gallery" class="gallery"></div>
+      <div class="pagination"><button id="previous-page">← Previous</button><span id="page-count" aria-live="polite"></span><button id="next-page">Next →</button></div>
+    </section>
+  </main>
+  <footer><span>OPSD-V · Anonymous supplementary results</span><a href="#top">Back to top ↑</a></footer>
+  <noscript><p class="noscript">Enable JavaScript to use the synchronized video comparisons.</p></noscript>
+</body>
+</html>
