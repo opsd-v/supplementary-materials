@@ -28,3 +28,20 @@
 @media(max-width:700px){.gradient-examples{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.gradient-examples span{min-height:64px}.gradient-examples .thumbnail-focus{font-size:11px}}
 
 @media(max-width:600px){.filters select{min-width:0;max-width:100%}}
+
+/* The overview shares playback coordination, with its original soundtrack. */
+.overview-heading{justify-content:center;text-align:center}
+.overview-summary{margin-top:12px;font-size:14px;color:var(--muted)}
+#overview-player{max-width:960px;margin:0 auto}
+.video-grid.overview{grid-template-columns:minmax(0,1fr)}
+.overview-player video{aspect-ratio:16/9;object-fit:contain;background:#f7f8f5}
+.overview-player .controls{flex-wrap:wrap}
+.overview-audio{display:flex;align-items:center;gap:8px}
+.overview-audio .mute{min-width:62px}
+.volume-control{display:flex;align-items:center;width:86px}
+.controls .volume-control .volume{width:100%;min-width:0;flex:none}
+.comparison:fullscreen .video-grid.overview{grid-template-rows:minmax(0,1fr)}
+.overview-player.is-expanded{display:flex;flex-direction:column;padding:12px}
+.overview-player.is-expanded .video-grid{flex:1;min-height:0;max-height:calc(100dvh - 90px)}
+.overview-player.is-expanded video{max-height:calc(100dvh - 90px)}
+@media(max-width:600px){.overview-audio{width:100%;justify-content:flex-end;margin-top:2px}.volume-control{width:110px}.overview-summary{font-size:13px}}

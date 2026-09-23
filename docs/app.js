@@ -993,6 +993,13 @@ const ablations = [
   }
 ];
 
+const demoOverview = {
+  "title": "OPSD-V video overview",
+  "duration": 90,
+  "src": "assets/videos/demo/opsdv-demo-90s-1080p.mp4",
+  "poster": "assets/posters/demo/opsdv-demo-poster.jpg"
+};
+
 // Matched prompt pairs; group labels are one-based, source indices are zero-based.
 const gradientComparisons = [
   {
@@ -1942,6 +1949,11 @@ const nativeComparisonRoot = ['localhost','127.0.0.1','[::1]'].includes(location
 for (const item of gradientComparisons) {
   for (const video of item.videos) video.src = nativeComparisonRoot + video.src.split('?')[0].split('/').pop();
 }
+if (typeof demoOverview !== 'undefined') {
+  const demoRoot = ['localhost','127.0.0.1','[::1]'].includes(location.hostname)
+    ? 'assets/videos/demo/' : 'https://opsd-v.github.io/supplementary-materials/assets/videos/demo/';
+  demoOverview.src = demoRoot + demoOverview.src.split('?')[0].split('/').pop();
+}
 const isNativeReviewSource = video => video.dataset.transport === 'native';
 const prepareReviewSource = video => isNativeReviewSource(video) ? Promise.resolve(video.dataset.src) : prepareStreamSource(video);
 const ensureReviewBuffered = (video,time,options) => isNativeReviewSource(video) ? Promise.resolve() : ensureStreamBuffered(video,time,options);
@@ -1960,14 +1972,30 @@ let counter = 0;
 
 function createComparison(data, mode = 'pair') {
   const id = `comparison-${++counter}`;
+  const isOverview = mode === 'overview';
   const el = document.createElement('article');
-  el.className = 'comparison';
-  el.setAttribute('aria-label', `${data.title} synchronized comparison`);
-  el.innerHTML = `<div class="comparison-title"><div class="scene-heading"><span class="scene">${escape(data.title)}</span>${focusBadge(data.category)}</div><span class="meta">${escape(data.meta || '')}</span></div>
-    <div class="video-grid ${mode}">${data.videos.map((v,i) => `<div class="video-cell ${v.ours?'is-ours':i===0?'is-base':''}"><div class="video-label">${escape(v.label)}<span>${escape(v.note || '')}</span></div><video muted playsinline preload="none" poster="${escape(v.poster)}" data-src="${escape(v.src)}" data-transport="${/\.mp4(?:[?#]|$)/.test(v.src)?'native':'stream'}" aria-label="${escape(data.title)} — ${escape(v.label)}"></video></div>`).join('')}</div>
-    <div class="controls"><button class="play" aria-label="Play ${escape(data.title)}">▶ Play</button><button class="restart" aria-label="Restart ${escape(data.title)}">↺</button><input id="${id}-seek" type="range" min="0" max="${data.duration || 60.5625}" value="0" step="0.0625" aria-label="Seek ${escape(data.title)}"><span class="time">0:00 / ${formatTime(data.duration || 60.5625)}</span><button class="expand" aria-label="Fullscreen ${escape(data.title)}">⛶ <span>Expand</span></button></div><p class="status" role="status" aria-live="polite"></p>
+  el.className = `comparison${isOverview?' overview-player':''}`;
+  el.setAttribute('aria-label', isOverview?data.title:`${data.title} synchronized comparison`);
+  el.innerHTML = `${isOverview?`<span class="scene sr-only">${escape(data.title)}</span>`:`<div class="comparison-title"><div class="scene-heading"><span class="scene">${escape(data.title)}</span>${focusBadge(data.category)}</div><span class="meta">${escape(data.meta || '')}</span></div>`}
+    <div class="video-grid ${mode}">${data.videos.map((v,i) => `<div class="video-cell ${v.ours?'is-ours':i===0?'is-base':''}">${isOverview?'':`<div class="video-label">${escape(v.label)}<span>${escape(v.note || '')}</span></div>`}<video ${isOverview?'':'muted'} playsinline preload="none" poster="${escape(v.poster)}" data-src="${escape(v.src)}" data-transport="${/\.mp4(?:[?#]|$)/.test(v.src)?'native':'stream'}" aria-label="${escape(data.title)} — ${escape(v.label)}"></video></div>`).join('')}</div>
+    <div class="controls"><button class="play" aria-label="Play ${escape(data.title)}">▶ Play</button><button class="restart" aria-label="Restart ${escape(data.title)}">↺</button><input id="${id}-seek" type="range" min="0" max="${data.duration || 60.5625}" value="0" step="0.0625" aria-label="Seek ${escape(data.title)}"><span class="time">0:00 / ${formatTime(data.duration || 60.5625)}</span><button class="expand" aria-label="Fullscreen ${escape(data.title)}">⛶ <span>Expand</span></button>${isOverview?`<div class="overview-audio"><button class="mute" type="button" aria-label="Mute video overview" aria-pressed="false">Mute</button><label class="volume-control"><span class="sr-only">Video overview volume</span><input class="volume" type="range" min="0" max="1" step="0.05" value="0.7" aria-label="Video overview volume" aria-valuetext="70%"></label></div>`:''}</div><p class="status" role="status" aria-live="polite"></p>
     ${data.prompt ? `<details class="prompt"><summary>Text prompt</summary><p>${escape(data.prompt)}</p></details>` : ''}`;
   const videos = [...el.querySelectorAll('video')];
+  if(isOverview){
+    const video=videos[0],mute=$('.mute',el),volume=$('.volume',el);
+    let audibleVolume=0.7;
+    video.volume=audibleVolume;video.muted=false;
+    const syncAudio=()=>{
+      const silent=video.muted||video.volume===0;
+      mute.textContent=silent?'Unmute':'Mute';mute.setAttribute('aria-pressed',String(silent));
+      mute.setAttribute('aria-label',`${silent?'Unmute':'Mute'} video overview`);
+      volume.value=String(video.volume);volume.setAttribute('aria-valuetext',`${Math.round(video.volume*100)}%`);
+      if(video.volume>0)audibleVolume=video.volume;
+    };
+    mute.addEventListener('click',()=>{if(video.muted||video.volume===0){if(video.volume===0)video.volume=audibleVolume;video.muted=false;}else video.muted=true;syncAudio();});
+    volume.addEventListener('input',()=>{video.volume=Number(volume.value);if(video.volume>0)video.muted=false;syncAudio();});
+    video.addEventListener('volumechange',syncAudio);syncAudio();
+  }
   const play = $('.play',el), seek = $('input',el), status = $('.status',el), clock = $('.time',el), expand = $('.expand',el);
   const player=attachPlayer({isNativeSource:isNativeReviewSource,prepareSource:prepareReviewSource,ensureBuffered:ensureReviewBuffered,suspendSource:suspendReviewSource,releaseSource:releaseReviewSource,videos,play,seek,clock,status,title:data.title,initialDuration:data.duration||60.5625,onPlay(){},onActivate(){mediaPriority.activate(c);}});
   $('.restart',el).addEventListener('click',()=>player.restart());
@@ -1986,6 +2014,12 @@ function quad(item){return{title:item.title,meta:`${item.backbone} · ${item.ben
   {label:'+ RL (Astrolabe)',note:'Reinforcement learning',src:item.rlVideo,poster:item.rlPoster},
   {label:'+ OPSD-V',note:'Our method',src:item.oursVideo,poster:item.oursPoster,ours:true}
 ]};}
+
+const overview=createComparison({
+  title:demoOverview.title,duration:demoOverview.duration,
+  videos:[{label:'OPSD-V',src:demoOverview.src,poster:demoOverview.poster}]
+},'overview');
+$('#overview-player').append(overview.el);
 
 const featured=featuredSlugs.map(slug=>cases.find(item=>item.slug===slug));
 const mainBackbones=['LongLive','Self-Forcing'];
