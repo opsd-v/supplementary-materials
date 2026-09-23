@@ -996,53 +996,27 @@ const ablations = [
 // Matched prompt pairs; group labels are one-based, source indices are zero-based.
 const gradientComparisons = [
   {
-    "title": "Portrait outdoors",
+    "title": "Aerial village view",
     "benchmark": "MeiBench",
-    "group": 15,
-    "index": 14,
+    "group": 16,
+    "index": 15,
     "category": "quality",
     "meta": "One-minute generation",
-    "prompt": "The video begins with a person standing outdoors, looking towards the horizon, with a blurred background of trees and a road. The scene transitions to a close-up of a camera lens with the text \"FULL HD 1080 RESOLUTION\" and \"NO PLUGINS REQUIRED.\" The camera lens is then shown in a split-screen view with a person's face, and the text \"EASY TO CUSTOMIZE\" appears. The video continues with a close-up of a person's eye, followed by a close-up of a person's nose, and then a close-up of a person's mouth. The background remains consistent with the previous clips, featuring a blurred outdoor setting with trees and a road. The video concludes with the text \"THANK YOU FOR WATCHING\" and an image of a person standing on a road with a blurred background of trees and a sunrise or sunset.",
+    "prompt": "An aerial view of a traditional village or town with a prominent large tree in the center. The tree is surrounded by traditional buildings with tiled roofs, and there are several small canals or waterways running through the village. The canals are lined with stone pathways and have wooden bridges connecting different sections of the village. The buildings have grey tiled roofs and white walls, and the canals are filled with calm water. The video shows the village from different angles, highlighting the layout and architecture of the buildings and the positioning of the trees and waterways.",
     "duration": 60,
     "videos": [
       {
         "label": "Self Gradient Forcing",
         "note": "Chunkwise EMA",
-        "src": "assets/videos/gradient-comparison/mei-000014-sgf.mp4",
-        "poster": "assets/posters/gradient-comparison/mei-000014-sgf.jpg",
+        "src": "assets/videos/gradient-comparison/mei-000015-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/mei-000015-sgf.jpg",
         "ours": false
       },
       {
         "label": "Self-Forcing + OPSD-V",
         "note": "Seed 1",
-        "src": "assets/videos/gradient-comparison/mei-000014-opsdv.mp4",
-        "poster": "assets/posters/gradient-comparison/mei-000014-opsdv.jpg",
-        "ours": true
-      }
-    ]
-  },
-  {
-    "title": "Bird perched on a stump",
-    "benchmark": "MeiBench",
-    "group": 54,
-    "index": 53,
-    "category": "quality",
-    "meta": "One-minute generation",
-    "prompt": "A small bird with a predominantly dark blue plumage and white wingtips is perched on a vertical, textured stump or post. The bird has a black beak and is positioned in a dense, green forested area. It moves its head and body slightly while perched, occasionally pecking at the stump or post. The background is blurred, with shades of green indicating foliage, and the lighting suggests it might be daytime. The bird is shown in various positions, sometimes facing the camera and other times looking away.",
-    "duration": 60,
-    "videos": [
-      {
-        "label": "Self Gradient Forcing",
-        "note": "Chunkwise EMA",
-        "src": "assets/videos/gradient-comparison/mei-000053-sgf.mp4",
-        "poster": "assets/posters/gradient-comparison/mei-000053-sgf.jpg",
-        "ours": false
-      },
-      {
-        "label": "Self-Forcing + OPSD-V",
-        "note": "Seed 1",
-        "src": "assets/videos/gradient-comparison/mei-000053-opsdv.mp4",
-        "poster": "assets/posters/gradient-comparison/mei-000053-opsdv.jpg",
+        "src": "assets/videos/gradient-comparison/mei-000015-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/mei-000015-opsdv.jpg",
         "ours": true
       }
     ]
@@ -2117,17 +2091,17 @@ function selectGradient(index,focusThumbnail=false){
   gradientIndex=index;
   const item=gradientComparisons[index];
   replaceComparison($('#gradient-player'),item,'pair');
-  $('#gradient-count').textContent=`Example ${index+1} of ${gradientComparisons.length} · ${item.benchmark} · Group ${item.group}`;
+  $('#gradient-count').textContent=`Example ${index+1} of ${gradientComparisons.length} · ${item.benchmark}`;
   $('#gradient-previous').disabled=index===0;
   $('#gradient-next').disabled=index===gradientComparisons.length-1;
   $('#gradient-note').textContent=item.duration===20
     ? 'This comparison shows the first 20 seconds. Both videos share the same timeline; playback starts at 0:00.'
-    : 'Both videos share the same timeline; playback starts at 0:00. Groups are numbered from 1 within each benchmark.';
+    : 'Both videos share the same timeline; playback starts at 0:00.';
   const buttons=[...document.querySelectorAll('[data-gradient]')];
   buttons.forEach((button,i)=>button.setAttribute('aria-pressed',String(i===index)));
   if(focusThumbnail)buttons[index].focus();
 }
-$('#gradient-examples').innerHTML=gradientComparisons.map((item,i)=>`<button data-gradient="${i}" aria-pressed="false" aria-label="Show ${escape(item.benchmark)} group ${item.group}: ${escape(item.title)}"><img src="${escape(item.videos.find(v=>v.ours).poster)}" alt="" loading="lazy"><span><small>${escape(item.benchmark)} · Group ${item.group}</small>${escape(item.title)}</span>${focusBadge(item.category,'thumbnail-focus')}</button>`).join('');
+$('#gradient-examples').innerHTML=gradientComparisons.map((item,i)=>`<button data-gradient="${i}" aria-pressed="false" aria-label="Show ${escape(item.benchmark)}: ${escape(item.title)}"><img src="${escape(item.videos.find(v=>v.ours).poster)}" alt="" loading="lazy"><span><small>${escape(item.benchmark)}</small>${escape(item.title)}</span>${focusBadge(item.category,'thumbnail-focus')}</button>`).join('');
 $('#gradient-examples').addEventListener('click',e=>{const button=e.target.closest('[data-gradient]');if(button)selectGradient(Number(button.dataset.gradient));});
 $('#gradient-examples').addEventListener('keydown',e=>{
   if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;

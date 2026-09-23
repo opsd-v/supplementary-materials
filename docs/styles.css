@@ -20,7 +20,7 @@
 
 .experiment-description{max-width:940px;font-size:14px;line-height:1.8;color:#536472;margin:0 0 20px}.experiment-description strong{color:var(--ink);font-weight:600}.experiment-observation{margin:18px 0 0}
 
-/* Further baseline comparison: one synchronized pair and eight compact choices. */
+/* Further baseline comparison: one synchronized pair and compact example choices. */
 .gradient-examples{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .gradient-examples span{min-height:64px;font-size:13px}
 .gradient-examples span small{display:block;margin-bottom:4px;color:var(--muted);font-size:10px;letter-spacing:.2px}
