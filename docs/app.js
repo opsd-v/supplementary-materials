@@ -1125,12 +1125,12 @@ const ablationExamples = [
 // Anonymous pages cannot fetch media bytes: a classic-script loader can prepare
 // seekable Blob URLs through prepareSource without requiring CORS.
 // A single cancellable operation owns each user action and its buffering cycles.
-function attachPlayer({videos, play, seek, clock, status, title, initialDuration, onPlay, documentTarget = document, prepareSource = async v => v.dataset.src, ensureBuffered = null, releaseSource = () => {}}) {
+function attachPlayer({videos, play, seek, clock, status, title, initialDuration, onPlay = () => {}, onActivate = () => {}, isNativeSource = () => false, suspendSource = () => false, documentTarget = document, prepareSource = async v => v.dataset.src, ensureBuffered = null, releaseSource = () => {}}) {
   const bufferSource=ensureBuffered||async function(){};
   const timeout=120000;
   const format=t=>`${Math.floor(Math.max(0,t)/60)}:${String(Math.floor(Math.max(0,t)%60)).padStart(2,'0')}`;
   let duration=initialDuration,target=0,intent=false,phase='paused',destroyed=false;
-  let operation=null,frame=0,scrubbing=false,resumeAfterScrub=false;
+  let operation=null,frame=0,scrubbing=false,resumeAfterScrub=false,warming=false,warmReady=false,warmPromise=null;
   const preparedSources=new Map();
   const listeners=[];
   const listen=(node,event,handler)=>{node.addEventListener(event,handler);listeners.push(()=>node.removeEventListener(event,handler));};
@@ -1140,8 +1140,19 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
     play.textContent=intent?'Ⅱ Pause':'▶ Play';play.setAttribute('aria-label',`${intent?'Pause':'Play'} ${title}`);
   };
   const stopMedia=()=>{cancelAnimationFrame(frame);videos.forEach(v=>{v.pause();v.playbackRate=1;});};
-  const cancel=()=>{operation?.abort();operation=null;stopMedia();};
-  const pause=()=>{intent=false;scrubbing=false;resumeAfterScrub=false;cancel();phase='paused';status.textContent='';render();};
+  const suspend=({deactivate=false}={})=>videos.forEach(v=>{
+    // Stream sources keep their decoded buffers, but must stop background I/O.
+    // An unfinished source may be invalidated by the loader on cancellation.
+    if(suspendSource(v)===true){preparedSources.delete(v);warmReady=false;}
+    if(isNativeSource(v)){
+      v.preload='none';
+      // Keeping the source on an ordinary Pause preserves the displayed frame.
+      // Deactivation unloads it to release bandwidth for the next visible case.
+      if(deactivate&&v.getAttribute('src')){v.removeAttribute('src');v.load();warmReady=false;}
+    }
+  });
+  const cancel=(options={})=>{operation?.abort();operation=null;warming=false;warmPromise=null;stopMedia();suspend(options);};
+  const pause=(options={})=>{intent=false;scrubbing=false;resumeAfterScrub=false;cancel(options);phase='paused';status.textContent='';render();};
   const current=op=>!!op&&!destroyed&&!op.signal.aborted&&operation===op;
   const cancelled=()=>new DOMException('Cancelled','AbortError');
   const timeLeft=deadline=>Math.max(1,deadline-performance.now());
@@ -1149,7 +1160,7 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
     if(preparedSources.has(v))return preparedSources.get(v).promise;
     const entry={promise:null};
     entry.promise=Promise.resolve().then(()=>{
-      if(destroyed)throw cancelled();
+      if(destroyed||!operation)throw cancelled();
       return prepareSource(v);
     }).then(url=>{
       if(destroyed){releaseSource(v);throw cancelled();}
@@ -1166,7 +1177,7 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
     return -1;
   };
   const bufferedAt=(v,t)=>rangeEnd(v.buffered,t)>=t;
-  const canSeekTo=(v,t)=>bufferedAt(v,t)||((!ensureBuffered||v.dataset.mediaComplete==='true')&&v.getAttribute('src')?.startsWith('blob:')&&rangeEnd(v.seekable,t)>=t);
+  const canSeekTo=(v,t)=>bufferedAt(v,t)||(isNativeSource(v)&&rangeEnd(v.seekable,t)>=t)||((!ensureBuffered||v.dataset.mediaComplete==='true')&&v.getAttribute('src')?.startsWith('blob:')&&rangeEnd(v.seekable,t)>=t);
   const playbackReady=v=>{
     if(v.seeking||v.readyState<3)return false;
     const remaining=Math.max(0,(Number.isFinite(v.duration)?v.duration:duration)-v.currentTime);
@@ -1201,7 +1212,7 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
   });
   const fail=(op,error)=>{
     if(!current(op))return;
-    cancel();intent=false;phase='paused';
+    cancel({deactivate:true});intent=false;phase='paused';
     status.textContent=error.name==='AbortError'?'Playback stopped. Press Play to retry.':'This position could not load. Press Play to retry, or choose another time.';render();
   };
 
@@ -1238,8 +1249,8 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
   }
   async function run(time,resume){
     if(destroyed)return;
-    cancel();const op=new AbortController();operation=op;intent=resume;
-    if(resume)onPlay();
+    cancel();const op=new AbortController();operation=op;intent=resume;warmReady=false;
+    onActivate();if(resume)onPlay();
     const deadline=performance.now()+timeout;
     phase='seeking';target=Math.max(0,Math.min(time,duration));
     status.textContent=`Loading videos at ${format(target)}…`;render();
@@ -1247,7 +1258,8 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
       const sources=await waitForTask(Promise.all(videos.map(preparedSource)),op.signal,deadline);
       if(!current(op))return;
       videos.forEach((v,index)=>{
-        if(!v.getAttribute('src')||v.error){v.preload='auto';v.src=sources[index];v.load();}
+        v.preload='auto';
+        if(!v.getAttribute('src')||v.error){v.src=sources[index];v.load();}
       });
       await waitForTask(Promise.all(videos.map(v=>bufferSource(v,target,{signal:op.signal,ahead:1}))),op.signal,deadline);
       await Promise.all(videos.map(v=>waitFor(v,()=>v.readyState>=1,op.signal,deadline)));
@@ -1258,8 +1270,8 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
       if(atEnd)intent=false;
       if(position>.01){
         status.textContent=`Buffering videos to ${format(position)}…`;
-        // MediaSource seekable spans unloaded gaps; only full-file Blob URLs
-        // may use it without confirming the requested position is buffered.
+        // MediaSource seekable spans unloaded gaps. Direct HTTP range sources
+        // and complete Blob files may seek before the target is buffered.
         await Promise.all(videos.map(v=>waitFor(v,()=>canSeekTo(v,position),op.signal,deadline)));
         if(!current(op))return;
       }
@@ -1269,10 +1281,41 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
       render();
       await Promise.all(videos.map(v=>waitFor(v,()=>!v.seeking&&v.readyState>=(intent?3:2)&&Math.abs(v.currentTime-position)<.13,op.signal,deadline)));
       if(!current(op))return;
-      if(!intent){phase='paused';if(atEnd)target=duration;status.textContent='';render();return;}
+      if(!intent){phase='paused';if(atEnd)target=duration;suspend();status.textContent='';render();return;}
       await Promise.all(videos.map(v=>waitFor(v,()=>playbackReady(v),op.signal,deadline)));
       if(current(op))await start(op,deadline);
     }catch(error){fail(op,error);}
+  }
+  async function warm(){
+    if(destroyed||intent||scrubbing||(operation&&!warming))return false;
+    if(warmReady)return true;
+    if(warming)return warmPromise;
+    // Warm only the current visible case. This never activates playback or
+    // announces loading; the page scheduler cancels it when priority changes.
+    cancel();const op=new AbortController();operation=op;warming=true;phase='warming';
+    const deadline=performance.now()+timeout;
+    const promise=(async()=>{
+      try{
+        const sources=await waitForTask(Promise.all(videos.map(preparedSource)),op.signal,deadline);
+        if(!current(op))return false;
+        videos.forEach((v,index)=>{
+          v.preload=isNativeSource(v)?'metadata':'auto';
+          if(!v.getAttribute('src')||v.error){v.src=sources[index];v.load();}
+        });
+        // Direct files use browser metadata preloading; script streams prepare
+        // one second so their first group is ready without downloading the tail.
+        await waitForTask(Promise.all(videos.filter(v=>!isNativeSource(v)).map(v=>bufferSource(v,target,{signal:op.signal,ahead:1}))),op.signal,deadline);
+        await Promise.all(videos.map(v=>waitFor(v,()=>v.readyState>=1,op.signal,deadline)));
+        if(!current(op))return false;
+        warming=false;warmReady=true;phase='paused';operation=null;suspend();return true;
+      }catch(error){
+        if(current(op)){cancel({deactivate:true});phase='paused';}
+        return false;
+      }finally{
+        if(warmPromise===promise)warmPromise=null;
+      }
+    })();
+    warmPromise=promise;return promise;
   }
   function beginScrub(){
     if(scrubbing)return;
@@ -1294,11 +1337,18 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
       const op=operation;
       queueMicrotask(()=>{if(current(op)&&phase==='playing'&&intent&&!scrubbing&&(v.seeking||v.readyState<3))buffer(op);});
     });
-    listen(v,'error',()=>{if(v.getAttribute('src')&&!destroyed){pause();status.textContent='A video could not load. Press Play to retry.';}});
+    listen(v,'error',()=>{
+      if(v.getAttribute('src')&&!destroyed){
+        const wasWarming=warming;pause({deactivate:true});releaseSource(v);preparedSources.delete(v);warmReady=false;
+        if(!wasWarming)status.textContent='A video could not load. Press Play to retry.';
+      }
+    });
   });
   render();
   return {
     pause,
+    warm,
+    getState(){return {intent,phase,warming,warmed:warmReady,target,destroyed};},
     restart(){
       const resume=intent;scrubbing=false;resumeAfterScrub=false;
       if(!resume&&videos.every(v=>!v.getAttribute('src'))){target=0;status.textContent='';render();return;}
@@ -1313,10 +1363,79 @@ function attachPlayer({videos, play, seek, clock, status, title, initialDuration
   };
 }
 
+// One visible comparison may prepare media; an explicit play/seek owns bandwidth.
+function createMediaPriority({documentTarget=document, windowTarget=window,
+  Observer=IntersectionObserver, delay=450, schedule=setTimeout, unschedule=clearTimeout}={}) {
+  const entries=new Map();
+  let active=null,prepared=null,timer=null,disposed=false;
+  const clearTimer=()=>{if(timer!==null)unschedule(timer);timer=null;};
+  const deactivate=c=>{
+    const entry=entries.get(c);if(!entry)return;
+    if(entry.engaged){c.pause({deactivate:true});entry.engaged=false;}
+    if(prepared===c)prepared=null;
+  };
+  const visible=c=>{const e=entries.get(c);return e&&e.visible&&e.ratio>=.15;};
+  const inView=c=>entries.get(c)?.visible;
+  const stopAll=()=>{
+    clearTimer();entries.forEach((_entry,c)=>deactivate(c));active=null;prepared=null;
+  };
+  const canWarm=()=>!documentTarget.hidden&&!windowTarget.navigator?.connection?.saveData
+    &&!['slow-2g','2g'].includes(windowTarget.navigator?.connection?.effectiveType);
+  const choose=()=>{
+    if(active&&inView(active))return active;
+    if(!canWarm())return null;
+    return [...entries.keys()].filter(visible).sort((a,b)=>{
+      const ar=a.el.getBoundingClientRect(),br=b.el.getBoundingClientRect();
+      const center=windowTarget.innerHeight/2;
+      return Math.abs((ar.top+ar.bottom)/2-center)-Math.abs((br.top+br.bottom)/2-center);
+    })[0]||null;
+  };
+  const update=()=>{
+    if(disposed)return;clearTimer();
+    if(documentTarget.hidden){stopAll();return;}
+    if(active&&!inView(active)){deactivate(active);active=null;}
+    const candidate=choose();
+    if(prepared&&prepared!==candidate)deactivate(prepared);
+    if(!candidate||candidate===prepared||candidate===active)return;
+    timer=schedule(()=>{
+      timer=null;if(disposed||candidate!==choose())return;
+      entries.forEach((_entry,c)=>{if(c!==candidate)deactivate(c);});
+      const entry=entries.get(candidate);if(!entry)return;
+      entry.engaged=true;prepared=candidate;
+      Promise.resolve(candidate.warm()).catch(()=>{});
+    },delay);
+  };
+  const observer=new Observer(changes=>{
+    for(const change of changes){
+      const c=[...entries.keys()].find(c=>c.el===change.target);if(!c)continue;
+      const entry=entries.get(c);entry.visible=change.isIntersecting;entry.ratio=change.intersectionRatio;
+    }
+    update();
+  },{threshold:[0,.15,.35,.65,1]});
+  const visibility=()=>update();
+  documentTarget.addEventListener('visibilitychange',visibility);
+  windowTarget.addEventListener('pagehide',stopAll);
+  return {
+    register(c){entries.set(c,{visible:false,ratio:0,engaged:false});observer.observe(c.el);},
+    activate(c){
+      clearTimer();entries.forEach((_entry,other)=>{if(other!==c)deactivate(other);});
+      active=c;prepared=c;const entry=entries.get(c);if(entry)entry.engaged=true;
+    },
+    remove(c){
+      observer.unobserve(c.el);entries.delete(c);
+      if(active===c)active=null;if(prepared===c)prepared=null;update();
+    },
+    stopAll,
+    destroy(){stopAll();disposed=true;observer.disconnect();entries.clear();
+      documentTarget.removeEventListener('visibilitychange',visibility);windowTarget.removeEventListener('pagehide',stopAll);},
+  };
+}
+
 // Classic-script transport works in the anonymous host's opaque-origin sandbox.
 // Encoded H.264 samples are copied into fragmented MP4; no video is re-encoded.
 const streamRequests = new Map();
 const streamEntries = new WeakMap();
+const streamPrefetchAhead = 12;
 const streamAbort = () => new DOMException('Cancelled', 'AbortError');
 const streamKey = src => src.split('/media/')[1]?.split('?')[0];
 const streamBytes = encoded => {
@@ -1517,9 +1636,9 @@ function validateStreamManifest(manifest) {
 }
 function prepareStreamSource(video) {
   let entry=streamEntries.get(video);
-  if(entry)return entry.promise;
+  if(entry){entry.suspended=false;return entry.promise;}
   const src=video.dataset.src;
-  entry={video,src,root:src.slice(0,src.indexOf('/media/')+7),lifetime:new AbortController(),released:false,url:null,target:0,appendQueue:Promise.resolve(),fillQueue:Promise.resolve(),foreground:0,fill:null,lastAppended:-1,finalAppended:false,bundles:new Map(),backgroundRetryAt:0};
+  entry={video,src,root:src.slice(0,src.indexOf('/media/')+7),lifetime:new AbortController(),released:false,suspended:false,generation:0,prepared:false,url:null,target:0,appendQueue:Promise.resolve(),fillQueue:Promise.resolve(),foreground:0,fill:null,lastAppended:-1,finalAppended:false,bundles:new Map(),backgroundRetryAt:0};
   streamEntries.set(video,entry);
   entry.promise=(async()=>{
     const manifest=await fetchStreamScript(src,entry.lifetime.signal);validateStreamManifest(manifest);entry.manifest=manifest;
@@ -1531,7 +1650,7 @@ function prepareStreamSource(video) {
       for(let index=0;index<manifest.segments.length;index++)parts.push(await readStreamSegment(entry,index,entry.lifetime.signal));
       if(entry.released)throw streamAbort();
       entry.url=URL.createObjectURL(new Blob(parts,{type:'video/mp4'}));entry.fallback=true;
-      video.dataset.mediaComplete='true';entry.ready=Promise.resolve();return entry.url;
+      video.dataset.mediaComplete='true';entry.ready=Promise.resolve();entry.prepared=true;return entry.url;
     }
     const media=new MediaSourceClass();entry.media=media;entry.url=URL.createObjectURL(media);
     entry.ready=new Promise((resolve,reject)=>{
@@ -1552,15 +1671,16 @@ function prepareStreamSource(video) {
     // A destroyed view may never ask for the initialization promise.
     entry.ready.catch(()=>{});
     entry.prefetch=()=>{
-      if(entry.released||entry.foreground||entry.fill||video.paused||video.seeking||Date.now()<entry.backgroundRetryAt)return;
+      if(entry.released||entry.suspended||entry.foreground||entry.fill||video.paused||video.seeking||Date.now()<entry.backgroundRetryAt)return;
       const time=video.currentTime;
-      if(streamRangeContains(video,time,manifest.duration))return;
+      if(streamWindowBuffered(entry,time,streamPrefetchAhead))return;
       const controller=new AbortController();entry.fill=controller;entry.target=time;
-      fillStreamWindow(entry,time,manifest.duration,controller.signal).catch(error=>{
+      fillStreamWindow(entry,time,streamPrefetchAhead,controller.signal).catch(error=>{
         if(error.name!=='AbortError')entry.backgroundRetryAt=Date.now()+30000;
       }).finally(()=>{if(entry.fill===controller)entry.fill=null;});
     };
     video.addEventListener('timeupdate',entry.prefetch);
+    entry.prepared=true;
     return entry.url;
   })().catch(error=>{if(streamEntries.get(video)===entry)releaseStreamSource(video);throw error;});
   return entry.promise;
@@ -1568,8 +1688,10 @@ function prepareStreamSource(video) {
 async function ensureStreamBuffered(video,time,{signal,ahead=4}={}) {
   const entry=streamEntries.get(video);
   if(!entry)throw new Error('Video has not been prepared');
+  if(signal?.aborted)throw streamAbort();
+  const generation=entry.generation;entry.suspended=false;
   await waitStreamTask(entry.promise,signal);
-  if(entry.released)throw streamAbort();
+  if(entry.released||entry.suspended||entry.generation!==generation)throw streamAbort();
   if(entry.fallback)return;
   entry.fill?.abort();entry.fill=null;
   const controller=new AbortController();entry.fill=controller;entry.target=time;entry.foreground++;
@@ -1582,6 +1704,16 @@ async function ensureStreamBuffered(video,time,{signal,ahead=4}={}) {
     entry.foreground--;signal?.removeEventListener('abort',abort);entry.lifetime.signal.removeEventListener('abort',abort);
     if(entry.fill===controller)entry.fill=null;
   }
+}
+function suspendStreamSource(video) {
+  const entry=streamEntries.get(video);
+  if(!entry)return false;
+  entry.suspended=true;entry.generation++;
+  // An unfinished preparation must reject so the player can discard its promise.
+  // Keep a completed source and its downloaded bundles for a later resume.
+  if(!entry.prepared){releaseStreamSource(video);return true;}
+  entry.fill?.abort();entry.fill=null;
+  return false;
 }
 function releaseStreamSource(video) {
   const entry=streamEntries.get(video);if(!entry)return;
@@ -1600,12 +1732,29 @@ const reviewMedia = path => {
     ? '/api/repo/' + encodeURIComponent(decodeURIComponent(reviewMatch[1])) + '/file/media/' + relative
     : '../media/' + relative;
 };
+
+const nativeFeatured = new Set(featuredSlugs);
+const nativeRoot = ['localhost','127.0.0.1','[::1]'].includes(location.hostname)
+  ? 'assets/videos/featured/'
+  : 'https://opsd-v.github.io/supplementary-materials/assets/videos/featured/';
 for (const item of cases) {
+  if (nativeFeatured.has(item.slug)) {
+    for (const key of ['baseVideo','oursVideo','sftVideo','rlVideo']) {
+      item[key] = nativeRoot + item[key].split('?')[0].split('/').pop();
+    }
+    continue;
+  }
   for (const key of ['baseVideo','oursVideo','sftVideo','rlVideo']) item[key] = reviewMedia(item[key]);
 }
 for (const item of [...motivations, ...ablationExamples]) {
   for (const video of item.videos) video.src = reviewMedia(video.src);
 }
+
+const isNativeReviewSource = video => video.dataset.transport === 'native';
+const prepareReviewSource = video => isNativeReviewSource(video) ? Promise.resolve(video.dataset.src) : prepareStreamSource(video);
+const ensureReviewBuffered = (video,time,options) => isNativeReviewSource(video) ? Promise.resolve() : ensureStreamBuffered(video,time,options);
+const suspendReviewSource = video => isNativeReviewSource(video) ? false : suspendStreamSource(video);
+const releaseReviewSource = video => { if (!isNativeReviewSource(video)) releaseStreamSource(video); };
 
 
 const $ = (s, root = document) => root.querySelector(s);
@@ -1614,6 +1763,7 @@ const focusLabels={quality:'Quality',dynamics:'Dynamics',both:'Quality + Dynamic
 const focusBadge=(category,extra='')=>focusLabels[category]?`<small class="focus-badge focus-${category} ${extra}" aria-label="Example focus: ${focusLabels[category]}">${focusLabels[category]}</small>`:'';
 const formatTime = t => `${Math.floor(Math.max(0,t)/60)}:${String(Math.floor(Math.max(0,t)%60)).padStart(2,'0')}`;
 const controllers = new Set();
+const mediaPriority=createMediaPriority();
 let counter = 0;
 
 function createComparison(data, mode = 'pair') {
@@ -1622,20 +1772,20 @@ function createComparison(data, mode = 'pair') {
   el.className = 'comparison';
   el.setAttribute('aria-label', `${data.title} synchronized comparison`);
   el.innerHTML = `<div class="comparison-title"><div class="scene-heading"><span class="scene">${escape(data.title)}</span>${focusBadge(data.category)}</div><span class="meta">${escape(data.meta || '')}</span></div>
-    <div class="video-grid ${mode}">${data.videos.map((v,i) => `<div class="video-cell ${v.ours?'is-ours':i===0?'is-base':''}"><div class="video-label">${escape(v.label)}<span>${escape(v.note || '')}</span></div><video muted playsinline preload="none" poster="${escape(v.poster)}" data-src="${escape(v.src)}" aria-label="${escape(data.title)} — ${escape(v.label)}"></video></div>`).join('')}</div>
+    <div class="video-grid ${mode}">${data.videos.map((v,i) => `<div class="video-cell ${v.ours?'is-ours':i===0?'is-base':''}"><div class="video-label">${escape(v.label)}<span>${escape(v.note || '')}</span></div><video muted playsinline preload="none" poster="${escape(v.poster)}" data-src="${escape(v.src)}" data-transport="${/\.mp4(?:[?#]|$)/.test(v.src)?'native':'stream'}" aria-label="${escape(data.title)} — ${escape(v.label)}"></video></div>`).join('')}</div>
     <div class="controls"><button class="play" aria-label="Play ${escape(data.title)}">▶ Play</button><button class="restart" aria-label="Restart ${escape(data.title)}">↺</button><input id="${id}-seek" type="range" min="0" max="${data.duration || 60.5625}" value="0" step="0.0625" aria-label="Seek ${escape(data.title)}"><span class="time">0:00 / ${formatTime(data.duration || 60.5625)}</span><button class="expand" aria-label="Fullscreen ${escape(data.title)}">⛶ <span>Expand</span></button></div><p class="status" role="status" aria-live="polite"></p>
     ${data.prompt ? `<details class="prompt"><summary>Text prompt</summary><p>${escape(data.prompt)}</p></details>` : ''}`;
   const videos = [...el.querySelectorAll('video')];
   const play = $('.play',el), seek = $('input',el), status = $('.status',el), clock = $('.time',el), expand = $('.expand',el);
-  const player=attachPlayer({prepareSource:prepareStreamSource,ensureBuffered:ensureStreamBuffered,releaseSource:releaseStreamSource,videos,play,seek,clock,status,title:data.title,initialDuration:data.duration||60.5625,onPlay(){controllers.forEach(c=>{if(c.el!==el)c.pause();});}});
+  const player=attachPlayer({isNativeSource:isNativeReviewSource,prepareSource:prepareReviewSource,ensureBuffered:ensureReviewBuffered,suspendSource:suspendReviewSource,releaseSource:releaseReviewSource,videos,play,seek,clock,status,title:data.title,initialDuration:data.duration||60.5625,onPlay(){},onActivate(){mediaPriority.activate(c);}});
   $('.restart',el).addEventListener('click',()=>player.restart());
   expand.addEventListener('click',async()=>{
     if(document.fullscreenElement===el){await document.exitFullscreen();return;}
     if(el.classList.contains('is-expanded')){el.classList.remove('is-expanded');expand.innerHTML='⛶ <span>Expand</span>';document.body.style.overflow='';return;}
     try{await el.requestFullscreen();}catch{el.classList.add('is-expanded');document.body.style.overflow='hidden';expand.textContent='× Close';expand.focus();}
   });
-  const c={el,pause:player.pause,destroy(){player.destroy();controllers.delete(c);}};
-  controllers.add(c);return c;
+  const c={el,pause:player.pause,warm:player.warm,getState:player.getState,destroy(){mediaPriority.remove(c);player.destroy();controllers.delete(c);}};
+  controllers.add(c);mediaPriority.register(c);return c;
 }
 function replaceComparison(root,data,mode){controllers.forEach(c=>{if(root.contains(c.el))c.destroy();});const c=createComparison(data,mode);root.replaceChildren(c.el);return c;}
 function quad(item){return{title:item.title,meta:`${item.backbone} · ${item.benchmark}`,category:item.category,prompt:item.prompt,videos:[
@@ -1740,7 +1890,6 @@ function renderGallery(scroll=false){
 document.querySelectorAll('.filters select').forEach(s=>s.addEventListener('change',()=>{page=0;renderGallery();}));
 $('#previous-page').addEventListener('click',()=>{page--;renderGallery(true);});$('#next-page').addEventListener('click',()=>{page++;renderGallery(true);});
 renderGallery();
-document.addEventListener('visibilitychange',()=>{if(document.hidden)controllers.forEach(c=>c.pause());});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.is-expanded').forEach(el=>{el.classList.remove('is-expanded');$('.expand',el).innerHTML='⛶ <span>Expand</span>';});document.body.style.overflow='';}});
 document.addEventListener('fullscreenchange',()=>{controllers.forEach(c=>{const b=$('.expand',c.el);b.innerHTML=document.fullscreenElement===c.el?'× <span>Close</span>':'⛶ <span>Expand</span>';b.setAttribute('aria-label',`${document.fullscreenElement===c.el?'Exit fullscreen':'Fullscreen'} ${$('.scene',c.el).textContent}`);});});
 

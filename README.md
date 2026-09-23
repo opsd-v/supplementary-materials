@@ -1,9 +1,7 @@
 # Anonymous supplementary video results
 
-This repository contains the supplementary website and videos for an anonymous submission.
+This repository contains the supplementary website and 187 original-quality videos for an anonymous submission. The website provides synchronized comparisons of the base model, SFT, Astrolabe, and OPSD-V, together with cache diagnostics and ablations.
 
-The website is in `docs/`; its video files are in `media/`. The review website provides synchronized comparisons of the base model, SFT, Astrolabe, and OPSD-V, together with cache diagnostics and ablations.
+The website is in `docs/`. The 48 featured videos are original MP4 files in `docs/assets/videos/featured/`, served directly by GitHub Pages. Their headers are arranged for progressive playback without re-encoding. The remaining 139 videos use the classic-script fragmented-MP4 transport in `media/` for compatibility with the anonymous host. All encoded video samples, resolutions, frame rates, and durations are preserved.
 
-Videos retain their original encoded image streams, resolution, frame rate, and duration. Additional examples are selected for content diversity; all four methods are retained for each selected example. Evaluation metrics are computed over the complete benchmark protocol described on the website.
-
-The media scripts transport the original encoded video samples in fragmented MP4 without re-encoding. The website decodes them into local video URLs to start playback earlier and support synchronized seeking under the anonymous host's sandbox.
+Only the current visible comparison prepares media in advance. Explicit playback and seeking take priority; inactive comparisons stop background loading. Evaluation metrics use the complete benchmark protocol described on the website.
