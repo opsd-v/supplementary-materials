@@ -9,7 +9,7 @@
   <title>OPSD-V · Anonymous Supplementary Results</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css?v=demo-overview-14">
-  <script defer src="app.js?v=hybrid-demo-4"></script>
+  <script defer src="app.js?v=hybrid-semantic-5"></script>
   <link rel="preconnect" href="https://opsd-v.github.io" crossorigin>
 </head>
 <body>
@@ -59,7 +59,7 @@
 
     <section id="evaluation" class="section">
       <div class="section-heading"><div><p class="eyebrow">04 / Evaluation</p><h2>Quantitative Comparison</h2></div></div>
-      <p class="lead">OPSD-V improves Quality and Dynamic Degree on both backbones, with small decreases in Semantic scores relative to the base models.</p>
+      <p class="lead">OPSD-V improves Quality and Dynamic Degree on both backbones. Semantic scores decrease slightly on LongLive and increase slightly on Self-Forcing relative to their base models.</p>
       <div id="main-table" class="table-wrap"></div>
       <p class="table-note"><span class="best">Red</span>: best. <span class="second">Blue</span>: second-best, within each backbone. ↑ Higher is better.</p>
       <details class="details"><summary>Evaluation and metric definitions</summary><div><p>Results average MovieGenBench and MeiBench equally, using 120 prompts from each benchmark and one video per prompt. Videos are approximately one minute long, generated at 16 FPS with four denoising steps.</p><p><strong>Quality (6)</strong> averages subject consistency, background consistency, aesthetic quality, imaging quality, motion smoothness, and dynamic degree. <strong>Semantic (6)</strong> averages object class, multiple objects, color, scene, appearance style, and overall consistency. These are unweighted means of raw dimension scores. Dynamic Degree uses 5-second windows and is also reported separately.</p></div></details>
@@ -79,7 +79,7 @@
       <details id="ablation-detail" class="details"><summary id="ablation-detail-summary">Enlarged details</summary><div><figure class="paper-figure"><a id="ablation-detail-link" target="_blank" rel="noopener" aria-label="Open selected ablation detail figure at full resolution"><img id="ablation-detail-image" alt="" loading="lazy"></a><figcaption id="ablation-detail-caption"></figcaption></figure></div></details>
       <div class="method-steps ablation-notes"><article><h3>Prediction Space</h3><p>Replacing velocity matching with clean-latent (x₀) matching reduces Quality and Dynamic Degree.</p></article><article><h3>Denoising-Step Supervision</h3><p>Supervising only the first denoising step leaves the remaining three steps without direct supervision.</p></article><article><h3>Teacher-Cache Update</h3><p>Using the student’s latest chunk in the teacher cache yields weaker local detail than the teacher’s own clean estimate.</p></article></div>
       <div id="ablation-table" class="table-wrap"></div>
-      <p class="table-note"><span class="best">Red</span>: best. <span class="second">Blue</span>: second-best. Scores are averaged equally over the two benchmarks.</p>
+      <p class="table-note"><span class="best">Red</span>: best. <span class="second">Blue</span>: second-best, within each backbone. ↑ Higher is better. Scores are averaged equally over the two benchmarks.</p>
     </section>
 
     <section id="more" class="section">

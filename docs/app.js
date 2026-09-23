@@ -876,7 +876,7 @@ const metrics = [
     "values": {
       "quality6": "0.7867",
       "dynamic5s": "0.5156",
-      "semantic6": "0.3957"
+      "semantic6": "0.5123"
     }
   },
   {
@@ -906,7 +906,7 @@ const metrics = [
     "values": {
       "quality6": "0.7992",
       "dynamic5s": "0.6077",
-      "semantic6": "0.3931"
+      "semantic6": "0.5068"
     }
   },
   {
@@ -916,7 +916,7 @@ const metrics = [
     "values": {
       "quality6": "0.8020",
       "dynamic5s": "0.6421",
-      "semantic6": "0.3965"
+      "semantic6": "0.5041"
     }
   },
   {
@@ -946,7 +946,7 @@ const metrics = [
     "values": {
       "quality6": "0.8058",
       "dynamic5s": "0.6715",
-      "semantic6": "0.3900"
+      "semantic6": "0.5046"
     }
   }
 ];
@@ -988,7 +988,7 @@ const ablations = [
     "values": {
       "quality6": "0.7992",
       "dynamic5s": "0.6077",
-      "semantic6": "0.3931"
+      "semantic6": "0.5068"
     }
   }
 ];
@@ -996,7 +996,7 @@ const ablations = [
 const demoOverview = {
   "title": "OPSD-V video overview",
   "duration": 90,
-  "src": "assets/videos/demo/opsdv-demo-90s-1080p.mp4",
+  "src": "assets/videos/demo/opsdv-demo-90s-1080p.mp4?v=semantic-20260923",
   "poster": "assets/posters/demo/opsdv-demo-poster.jpg"
 };
 
@@ -1952,7 +1952,7 @@ for (const item of gradientComparisons) {
 if (typeof demoOverview !== 'undefined') {
   const demoRoot = ['localhost','127.0.0.1','[::1]'].includes(location.hostname)
     ? 'assets/videos/demo/' : 'https://opsd-v.github.io/supplementary-materials/assets/videos/demo/';
-  demoOverview.src = demoRoot + demoOverview.src.split('?')[0].split('/').pop();
+  demoOverview.src = demoRoot + demoOverview.src.split('/').pop();
 }
 const isNativeReviewSource = video => video.dataset.transport === 'native';
 const prepareReviewSource = video => isNativeReviewSource(video) ? Promise.resolve(video.dataset.src) : prepareStreamSource(video);
