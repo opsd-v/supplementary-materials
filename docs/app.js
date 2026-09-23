@@ -944,7 +944,7 @@ const metrics = [
     "kind": "opsdv",
     "backbone": "Self-Forcing",
     "values": {
-      "quality6": "0.8058",
+      "quality6": "0.8158",
       "dynamic5s": "0.6715",
       "semantic6": "0.5046"
     }
