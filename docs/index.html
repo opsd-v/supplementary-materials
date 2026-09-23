@@ -8,13 +8,13 @@
   <meta name="description" content="OPSD-V: real long-video context for on-policy post-training of few-step autoregressive video generators. Anonymous supplementary results.">
   <title>OPSD-V · Anonymous Supplementary Results</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=wording-8">
-  <script defer src="app.js?v=hybrid-1"></script>
+  <link rel="stylesheet" href="styles.css?v=sgf-comparison-12">
+  <script defer src="app.js?v=hybrid-sgf-2"></script>
   <link rel="preconnect" href="https://opsd-v.github.io" crossorigin>
 </head>
 <body>
   <a class="skip" href="#results">Skip to video comparisons</a>
-  <header class="site-header"><a class="wordmark" href="#top">OPSD-V<span> / supplementary results</span></a><nav aria-label="Main navigation"><a href="#results">Results</a><a href="#motivation">Motivation</a><a href="#method">Method</a><a href="#evaluation">Evaluation</a><a href="#ablations">Ablation Study</a><a href="#more">More Comparisons</a></nav></header>
+  <header class="site-header"><a class="wordmark" href="#top">OPSD-V<span> / supplementary results</span></a><nav aria-label="Main navigation"><a href="#results">Results</a><a href="#motivation">Motivation</a><a href="#method">Method</a><a href="#evaluation">Evaluation</a><a href="#ablations">Ablation Study</a><a href="#more">More Comparisons</a><a href="#gradient-comparison">SGF Comparison</a></nav></header>
   <main id="top">
     <section class="hero">
       <p class="eyebrow">Anonymous submission · ICLR 2027</p>
@@ -82,6 +82,15 @@
       <div class="filters"><label>Backbone<select id="filter-backbone"><option value="all">Both backbones</option><option>LongLive</option><option>Self-Forcing</option></select></label><label>Benchmark<select id="filter-benchmark"><option value="all">Both benchmarks</option><option>MovieGenBench</option><option>MeiBench</option></select></label><label>Example focus<select id="filter-category"><option value="all">All examples</option><option value="quality">Visual quality</option><option value="dynamics">Motion dynamics</option><option value="both">Quality + dynamics</option></select></label><span id="result-count" role="status"></span></div>
       <div id="gallery" class="gallery"></div>
       <div class="pagination"><button id="previous-page">← Previous</button><span id="page-count" aria-live="polite"></span><button id="next-page">Next →</button></div>
+    </section>
+
+    <section id="gradient-comparison" class="section">
+      <div class="section-heading"><div><p class="eyebrow">07 / Further baseline comparison</p><h2>Comparison with Self Gradient Forcing</h2></div></div>
+      <p class="lead">We compare Self Gradient Forcing (SGF, chunkwise EMA) with Self-Forcing + OPSD-V on the same prompts. Our results use seed 1. The selected examples highlight visual quality, motion dynamics, or both.</p>
+      <div class="featured-navigation"><p id="gradient-count" aria-live="polite"></p><div><button id="gradient-previous" aria-label="Previous SGF comparison">← Previous</button><button id="gradient-next" aria-label="Next SGF comparison">Next →</button></div></div>
+      <div id="gradient-player"></div>
+      <div id="gradient-examples" class="featured-examples gradient-examples" role="group" aria-label="Self Gradient Forcing comparison examples"></div>
+      <p id="gradient-note" class="under-note"></p>
     </section>
   </main>
   <footer><span>OPSD-V · Anonymous supplementary results</span><a href="#top">Back to top ↑</a></footer>

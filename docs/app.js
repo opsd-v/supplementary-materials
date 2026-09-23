@@ -993,6 +993,218 @@ const ablations = [
   }
 ];
 
+// Matched prompt pairs; group labels are one-based, source indices are zero-based.
+const gradientComparisons = [
+  {
+    "title": "Portrait outdoors",
+    "benchmark": "MeiBench",
+    "group": 15,
+    "index": 14,
+    "category": "quality",
+    "meta": "One-minute generation",
+    "prompt": "The video begins with a person standing outdoors, looking towards the horizon, with a blurred background of trees and a road. The scene transitions to a close-up of a camera lens with the text \"FULL HD 1080 RESOLUTION\" and \"NO PLUGINS REQUIRED.\" The camera lens is then shown in a split-screen view with a person's face, and the text \"EASY TO CUSTOMIZE\" appears. The video continues with a close-up of a person's eye, followed by a close-up of a person's nose, and then a close-up of a person's mouth. The background remains consistent with the previous clips, featuring a blurred outdoor setting with trees and a road. The video concludes with the text \"THANK YOU FOR WATCHING\" and an image of a person standing on a road with a blurred background of trees and a sunrise or sunset.",
+    "duration": 60,
+    "videos": [
+      {
+        "label": "Self Gradient Forcing",
+        "note": "Chunkwise EMA",
+        "src": "assets/videos/gradient-comparison/mei-000014-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/mei-000014-sgf.jpg",
+        "ours": false
+      },
+      {
+        "label": "Self-Forcing + OPSD-V",
+        "note": "Seed 1",
+        "src": "assets/videos/gradient-comparison/mei-000014-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/mei-000014-opsdv.jpg",
+        "ours": true
+      }
+    ]
+  },
+  {
+    "title": "Bird perched on a stump",
+    "benchmark": "MeiBench",
+    "group": 54,
+    "index": 53,
+    "category": "quality",
+    "meta": "One-minute generation",
+    "prompt": "A small bird with a predominantly dark blue plumage and white wingtips is perched on a vertical, textured stump or post. The bird has a black beak and is positioned in a dense, green forested area. It moves its head and body slightly while perched, occasionally pecking at the stump or post. The background is blurred, with shades of green indicating foliage, and the lighting suggests it might be daytime. The bird is shown in various positions, sometimes facing the camera and other times looking away.",
+    "duration": 60,
+    "videos": [
+      {
+        "label": "Self Gradient Forcing",
+        "note": "Chunkwise EMA",
+        "src": "assets/videos/gradient-comparison/mei-000053-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/mei-000053-sgf.jpg",
+        "ours": false
+      },
+      {
+        "label": "Self-Forcing + OPSD-V",
+        "note": "Seed 1",
+        "src": "assets/videos/gradient-comparison/mei-000053-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/mei-000053-opsdv.jpg",
+        "ours": true
+      }
+    ]
+  },
+  {
+    "title": "Studio dance routine",
+    "benchmark": "MeiBench",
+    "group": 65,
+    "index": 64,
+    "category": "dynamics",
+    "meta": "One-minute generation",
+    "prompt": "Three individuals perform a choreographed dance routine in a studio with a dark background and bright overhead lights. They wear casual, comfortable clothing: two in beige sweaters and black pants, and one in a beige sweater and white shorts. The dancers start by standing in a line, then move into various dynamic poses and steps, including arm movements, leg lifts, and coordinated steps. The central dancer leads the routine, while the other two dancers follow her movements. The background remains consistent throughout the video, with a dark wall and a fan visible in the corner. The lighting is even, highlighting the dancers without casting harsh shadows.",
+    "duration": 60,
+    "videos": [
+      {
+        "label": "Self Gradient Forcing",
+        "note": "Chunkwise EMA",
+        "src": "assets/videos/gradient-comparison/mei-000064-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/mei-000064-sgf.jpg",
+        "ours": false
+      },
+      {
+        "label": "Self-Forcing + OPSD-V",
+        "note": "Seed 1",
+        "src": "assets/videos/gradient-comparison/mei-000064-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/mei-000064-opsdv.jpg",
+        "ours": true
+      }
+    ]
+  },
+  {
+    "title": "Cinematic space adventure",
+    "benchmark": "MovieGenBench",
+    "group": 3,
+    "index": 2,
+    "category": "dynamics",
+    "meta": "One-minute generation",
+    "prompt": "A movie trailer in a classic cinematic style, featuring the adventurous journey of a 30-year-old space man wearing a vibrant red wool knitted motorcycle helmet. The scene unfolds against a vast blue sky and a desolate salt desert landscape. Shot on 35mm film, the trailer showcases vivid and rich colors, capturing the hero as he navigates through the harsh terrain with determination. His helmet glints under the sun, adding to the dramatic effect. The background is a mix of sweeping desert vistas and distant horizons, with the occasional shimmer of light reflecting off the salt flats. A dynamic medium shot with a sweeping overhead angle, emphasizing the hero's resilience and the vastness of his adventure.",
+    "duration": 60,
+    "videos": [
+      {
+        "label": "Self Gradient Forcing",
+        "note": "Chunkwise EMA",
+        "src": "assets/videos/gradient-comparison/movie-000002-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000002-sgf.jpg",
+        "ours": false
+      },
+      {
+        "label": "Self-Forcing + OPSD-V",
+        "note": "Seed 1",
+        "src": "assets/videos/gradient-comparison/movie-000002-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000002-opsdv.jpg",
+        "ours": true
+      }
+    ]
+  },
+  {
+    "title": "Big Sur drone coast",
+    "benchmark": "MovieGenBench",
+    "group": 4,
+    "index": 3,
+    "category": "quality",
+    "meta": "One-minute generation",
+    "prompt": "A drone view of waves crashing against the rugged cliffs along Big Sur’s Garay Point beach. The crashing blue waters create white-tipped waves, while the golden light of the setting sun illuminates the rocky shore, casting long shadows. In the distance, a small island with a lighthouse stands tall, its beam piercing the twilight. Green shrubbery covers the cliff’s edge, and the steep drop from the road down to the beach is a dramatic feat, with the cliff’s edges jutting out over the sea. The camera angle provides a bird's-eye view, capturing the raw beauty of the coast and the rugged landscape of the Pacific Coast Highway. The scene is bathed in a warm, golden hue, highlighting the textures and details of the rocky terrain.",
+    "duration": 60,
+    "videos": [
+      {
+        "label": "Self Gradient Forcing",
+        "note": "Chunkwise EMA",
+        "src": "assets/videos/gradient-comparison/movie-000003-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000003-sgf.jpg",
+        "ours": false
+      },
+      {
+        "label": "Self-Forcing + OPSD-V",
+        "note": "Seed 1",
+        "src": "assets/videos/gradient-comparison/movie-000003-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000003-opsdv.jpg",
+        "ours": true
+      }
+    ]
+  },
+  {
+    "title": "Kangaroo disco dance",
+    "benchmark": "MovieGenBench",
+    "group": 13,
+    "index": 12,
+    "category": "dynamics",
+    "meta": "One-minute generation",
+    "prompt": "A vibrant cartoon-style illustration depicting a kangaroo performing a lively disco dance. The kangaroo has a joyful expression, with large, expressive eyes and a mischievous grin. It wears a colorful sequined outfit with sparkles, including a glittery top and matching pants. Its tail is fluffed out and swaying rhythmically. The kangaroo moves with natural fluidity, one foot lifted and the other stepping forward. The background features a blurred dance floor with colorful lights and dancing figures, creating a festive atmosphere. The illustration has a smooth, hand-drawn style with exaggerated proportions. A dynamic close-up shot from a slightly elevated angle.",
+    "duration": 60,
+    "videos": [
+      {
+        "label": "Self Gradient Forcing",
+        "note": "Chunkwise EMA",
+        "src": "assets/videos/gradient-comparison/movie-000012-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000012-sgf.jpg",
+        "ours": false
+      },
+      {
+        "label": "Self-Forcing + OPSD-V",
+        "note": "Seed 1",
+        "src": "assets/videos/gradient-comparison/movie-000012-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000012-opsdv.jpg",
+        "ours": true
+      }
+    ]
+  },
+  {
+    "title": "Vintage SUV on a mountain road",
+    "benchmark": "MovieGenBench",
+    "group": 18,
+    "index": 17,
+    "category": "quality",
+    "meta": "First 20 seconds",
+    "prompt": "A dynamic shot from behind a white vintage SUV with a black roof rack as it speeds up a steep dirt road surrounded by towering redwood trees on a rugged mountain slope. Dust kicks up from its tires, and the sunlight shines on the SUV, casting a warm glow over the scene. The dirt road curves gently into the distance, with no other vehicles in sight. The trees on either side are dense redwoods, with patches of greenery scattered throughout. The car navigates the curve with ease, making it seem as if it is on a thrilling drive through the rugged terrain. The dirt road is framed by steep hills and mountains, with a clear blue sky above and wispy clouds drifting by. The camera captures the vehicle from the rear, emphasizing its powerful and adventurous journey.",
+    "duration": 20,
+    "videos": [
+      {
+        "label": "Self Gradient Forcing",
+        "note": "Chunkwise EMA",
+        "src": "assets/videos/gradient-comparison/movie-000017-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000017-sgf.jpg",
+        "ours": false
+      },
+      {
+        "label": "Self-Forcing + OPSD-V",
+        "note": "Seed 1",
+        "src": "assets/videos/gradient-comparison/movie-000017-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000017-opsdv.jpg",
+        "ours": true
+      }
+    ]
+  },
+  {
+    "title": "Astronaut on the Moon",
+    "benchmark": "MovieGenBench",
+    "group": 61,
+    "index": 60,
+    "category": "both",
+    "meta": "One-minute generation",
+    "prompt": "An astronaut runs smoothly and appears almost weightless on the lunar surface, as seen from a low-angle shot that highlights the vast, desolate background of the moon. The moon's craters and rocky terrain are clearly visible, creating a stark contrast against the running astronaut who moves with graceful, fluid motions. The background features a muted, grayscale texture with subtle shadows and highlights, emphasizing the lunar landscape's rugged beauty. The astronaut wears a classic spacesuit with reflective fabric, adding to the sense of lightness and movement. A dynamic medium shot capturing the astronaut's forward momentum.",
+    "duration": 60,
+    "videos": [
+      {
+        "label": "Self Gradient Forcing",
+        "note": "Chunkwise EMA",
+        "src": "assets/videos/gradient-comparison/movie-000060-sgf.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000060-sgf.jpg",
+        "ours": false
+      },
+      {
+        "label": "Self-Forcing + OPSD-V",
+        "note": "Seed 1",
+        "src": "assets/videos/gradient-comparison/movie-000060-opsdv.mp4",
+        "poster": "assets/posters/gradient-comparison/movie-000060-opsdv.jpg",
+        "ours": true
+      }
+    ]
+  }
+];
+
 const ablationExamples = [
   {
     "title": "Train Crossing a Bridge",
@@ -1750,6 +1962,12 @@ for (const item of [...motivations, ...ablationExamples]) {
   for (const video of item.videos) video.src = reviewMedia(video.src);
 }
 
+const nativeComparisonRoot = ['localhost','127.0.0.1','[::1]'].includes(location.hostname)
+  ? 'assets/videos/gradient-comparison/'
+  : 'https://opsd-v.github.io/supplementary-materials/assets/videos/gradient-comparison/';
+for (const item of gradientComparisons) {
+  for (const video of item.videos) video.src = nativeComparisonRoot + video.src.split('?')[0].split('/').pop();
+}
 const isNativeReviewSource = video => video.dataset.transport === 'native';
 const prepareReviewSource = video => isNativeReviewSource(video) ? Promise.resolve(video.dataset.src) : prepareStreamSource(video);
 const ensureReviewBuffered = (video,time,options) => isNativeReviewSource(video) ? Promise.resolve() : ensureStreamBuffered(video,time,options);
@@ -1890,6 +2108,38 @@ function renderGallery(scroll=false){
 document.querySelectorAll('.filters select').forEach(s=>s.addEventListener('change',()=>{page=0;renderGallery();}));
 $('#previous-page').addEventListener('click',()=>{page--;renderGallery(true);});$('#next-page').addEventListener('click',()=>{page++;renderGallery(true);});
 renderGallery();
+
+// The SGF section mounts one matched pair at a time and shares the page's
+// playback/visibility controller, so switching examples releases old media.
+let gradientIndex=0;
+function selectGradient(index,focusThumbnail=false){
+  if(index<0||index>=gradientComparisons.length)return;
+  gradientIndex=index;
+  const item=gradientComparisons[index];
+  replaceComparison($('#gradient-player'),item,'pair');
+  $('#gradient-count').textContent=`Example ${index+1} of ${gradientComparisons.length} · ${item.benchmark} · Group ${item.group}`;
+  $('#gradient-previous').disabled=index===0;
+  $('#gradient-next').disabled=index===gradientComparisons.length-1;
+  $('#gradient-note').textContent=item.duration===20
+    ? 'This comparison shows the first 20 seconds. Both videos share the same timeline; playback starts at 0:00.'
+    : 'Both videos share the same timeline; playback starts at 0:00. Groups are numbered from 1 within each benchmark.';
+  const buttons=[...document.querySelectorAll('[data-gradient]')];
+  buttons.forEach((button,i)=>button.setAttribute('aria-pressed',String(i===index)));
+  if(focusThumbnail)buttons[index].focus();
+}
+$('#gradient-examples').innerHTML=gradientComparisons.map((item,i)=>`<button data-gradient="${i}" aria-pressed="false" aria-label="Show ${escape(item.benchmark)} group ${item.group}: ${escape(item.title)}"><img src="${escape(item.videos.find(v=>v.ours).poster)}" alt="" loading="lazy"><span><small>${escape(item.benchmark)} · Group ${item.group}</small>${escape(item.title)}</span>${focusBadge(item.category,'thumbnail-focus')}</button>`).join('');
+$('#gradient-examples').addEventListener('click',e=>{const button=e.target.closest('[data-gradient]');if(button)selectGradient(Number(button.dataset.gradient));});
+$('#gradient-examples').addEventListener('keydown',e=>{
+  if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+  const button=e.target.closest('[data-gradient]');if(!button)return;
+  const current=Number(button.dataset.gradient),count=gradientComparisons.length;
+  e.preventDefault();
+  selectGradient(e.key==='Home'?0:e.key==='End'?count-1:(current+(e.key==='ArrowRight'?1:-1)+count)%count,true);
+});
+$('#gradient-previous').addEventListener('click',()=>selectGradient(gradientIndex-1));
+$('#gradient-next').addEventListener('click',()=>selectGradient(gradientIndex+1));
+selectGradient(0);
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.is-expanded').forEach(el=>{el.classList.remove('is-expanded');$('.expand',el).innerHTML='⛶ <span>Expand</span>';});document.body.style.overflow='';}});
 document.addEventListener('fullscreenchange',()=>{controllers.forEach(c=>{const b=$('.expand',c.el);b.innerHTML=document.fullscreenElement===c.el?'× <span>Close</span>':'⛶ <span>Expand</span>';b.setAttribute('aria-label',`${document.fullscreenElement===c.el?'Exit fullscreen':'Fullscreen'} ${$('.scene',c.el).textContent}`);});});
 
