@@ -2007,7 +2007,30 @@ function createComparison(data, mode = 'pair') {
   const c={el,pause:player.pause,warm:player.warm,getState:player.getState,destroy(){mediaPriority.remove(c);player.destroy();controllers.delete(c);}};
   controllers.add(c);mediaPriority.register(c);return c;
 }
-function replaceComparison(root,data,mode){controllers.forEach(c=>{if(root.contains(c.el))c.destroy();});const c=createComparison(data,mode);root.replaceChildren(c.el);return c;}
+const carouselLayouts = new WeakMap();
+function alignCarousel(root) {
+  const carousel = root.closest('.case-carousel');
+  if (!carousel) return;
+  if (!carouselLayouts.has(root)) {
+    const update = () => {
+      const grid = $('.video-grid', root);
+      if (!grid || document.fullscreenElement || $('.is-expanded', root)) return;
+      const bounds = grid.getBoundingClientRect();
+      if (bounds.height) carousel.style.setProperty('--carousel-center', `${bounds.top - carousel.getBoundingClientRect().top + bounds.height / 2}px`);
+    };
+    const observer = new ResizeObserver(() => requestAnimationFrame(update));
+    observer.observe(root);
+    carouselLayouts.set(root, update);
+    carousel.addEventListener('keydown', event => {
+      if (!event.target.closest('.carousel-arrow') || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      const button = $(event.key === 'ArrowLeft' ? '.carousel-previous' : '.carousel-next', carousel);
+      if (!button.disabled) button.click();
+    });
+  }
+  requestAnimationFrame(carouselLayouts.get(root));
+}
+function replaceComparison(root,data,mode){controllers.forEach(c=>{if(root.contains(c.el))c.destroy();});const c=createComparison(data,mode);root.replaceChildren(c.el);alignCarousel(root);return c;}
 function quad(item){return{title:item.title,meta:`${item.backbone} · ${item.benchmark}`,category:item.category,prompt:item.prompt,videos:[
   {label:'Base model',note:item.backbone,src:item.baseVideo,poster:item.basePoster},
   {label:'+ SFT',note:'Flow matching',src:item.sftVideo,poster:item.sftPoster},
@@ -2027,6 +2050,7 @@ const mainSelections=[0,0];
 let mainBackbone=0;
 function selectMainExample(index,focusThumbnail=false){
   const items=featured.filter(item=>item.backbone===mainBackbones[mainBackbone]);
+  if(index<0||index>=items.length)return;
   mainSelections[mainBackbone]=index;
   replaceComparison($('#main-comparison'),quad(items[index]),'quad');
   $('#featured-count').textContent=`${mainBackbones[mainBackbone]} · Example ${index+1} of ${items.length}`;
@@ -2055,11 +2079,26 @@ $('#featured-previous').addEventListener('click',()=>selectMainExample(mainSelec
 $('#featured-next').addEventListener('click',()=>selectMainExample(mainSelections[mainBackbone]+1));
 document.querySelectorAll('[data-main]').forEach((tab,i)=>{tab.addEventListener('click',()=>selectMain(i));tab.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const n=e.key==='Home'?0:e.key==='End'?1:1-i;selectMain(n);document.querySelectorAll('[data-main]')[n].focus();}});});
 selectMain(0);
-function setupSelect(id,target,data,mode){const select=$(id);select.innerHTML=data.map((item,i)=>`<option value="${i}">${escape(item.title)}</option>`).join('');const render=()=>replaceComparison($(target),data[Number(select.value)],mode);select.addEventListener('change',render);render();}
-setupSelect('#motivation-select','#motivation-comparison',motivations,'triple');
+let motivationIndex=0;
+const motivationSelect=$('#motivation-select');
+motivationSelect.innerHTML=motivations.map((item,i)=>`<option value="${i}">${escape(item.title)}</option>`).join('');
+function selectMotivation(index){
+  if(index<0||index>=motivations.length)return;
+  motivationIndex=index;
+  motivationSelect.value=String(index);
+  replaceComparison($('#motivation-comparison'),motivations[index],'triple');
+  $('#motivation-count').textContent=`Example ${index+1} of ${motivations.length}`;
+  $('#motivation-previous').disabled=index===0;
+  $('#motivation-next').disabled=index===motivations.length-1;
+}
+motivationSelect.addEventListener('change',()=>selectMotivation(Number(motivationSelect.value)));
+$('#motivation-previous').addEventListener('click',()=>selectMotivation(motivationIndex-1));
+$('#motivation-next').addEventListener('click',()=>selectMotivation(motivationIndex+1));
+selectMotivation(0);
 let ablationIndex=0;
 $('#ablation-examples').innerHTML=ablationExamples.map((item,i)=>`<button data-ablation="${i}" aria-pressed="false" aria-label="Show ${escape(item.title)} ablation"><img src="${escape(item.videos.find(v=>v.ours).poster)}" alt="" loading="lazy"><span>${escape(item.title)}</span></button>`).join('');
 function selectAblation(index,focusThumbnail=false){
+  if(index<0||index>=ablationExamples.length)return;
   ablationIndex=index;
   const item=ablationExamples[index];
   replaceComparison($('#ablation-comparison'),item,'quad');

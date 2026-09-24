@@ -8,8 +8,8 @@
   <meta name="description" content="OPSD-V: real long-video context for on-policy post-training of few-step autoregressive video generators. Anonymous supplementary results.">
   <title>OPSD-V · Anonymous Supplementary Results</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=demo-overview-14">
-  <script defer src="app.js?v=quality-aligned-8158"></script>
+  <link rel="stylesheet" href="styles.css?v=models-arrows-20260924">
+  <script defer src="app.js?v=models-arrows-20260924"></script>
   <link rel="preconnect" href="https://opsd-v.github.io" crossorigin>
 </head>
 <body>
@@ -22,7 +22,7 @@
       <p class="paper-title">On-Policy Self-Distillation for Post-Training<br class="desktop-break"> Few-Step Autoregressive Video Generators</p>
       <p class="authors">Anonymous Authors</p>
       <p class="hero-summary">Cache-aware on-policy self-distillation with real long-video context.<br><strong>Improved long-horizon generation with the original four-step sampler.</strong></p>
-      <div class="hero-links"><a class="primary-link" href="#results">Video Comparisons <span aria-hidden="true">↓</span></a><a href="#method">Method Overview <span aria-hidden="true">↗</span></a><a href="https://anonymous.4open.science/r/OPSD-V-Code-2027/" target="_self" rel="noopener noreferrer">Code <span aria-hidden="true">↗</span></a></div>
+      <div class="hero-links"><a class="primary-link" href="#results">Video Comparisons <span aria-hidden="true">↓</span></a><a href="#method">Method Overview <span aria-hidden="true">↗</span></a><a href="https://anonymous.4open.science/r/OPSD-V-Code-2027/" target="_self" rel="noopener noreferrer">Code <span aria-hidden="true">↗</span></a><a href="https://huggingface.co/anonymousopsd-v/OPSD-V" target="_self" rel="noopener noreferrer">Models <span aria-hidden="true">↗</span></a></div>
     </section>
 
     <section id="overview" class="section overview-section" aria-labelledby="overview-title">
@@ -33,8 +33,12 @@
     <section id="results" class="section results-section">
       <div class="section-heading"><div><p class="eyebrow">01 / Qualitative results</p><h2>Qualitative Comparison</h2></div><p>Comparison of the base model, SFT, RL-based post-training with Astrolabe, and OPSD-V using the same prompt and seed.</p></div>
       <div class="tabs" role="tablist" aria-label="Main comparison backbone"><button id="tab-ll" role="tab" aria-selected="true" aria-controls="main-comparison" data-main="0">LongLive <span>6 examples</span></button><button id="tab-sf" role="tab" aria-selected="false" aria-controls="main-comparison" data-main="1" tabindex="-1">Self-Forcing <span>6 examples</span></button></div>
-      <div class="featured-navigation"><p id="featured-count" aria-live="polite"></p><div><button id="featured-previous" aria-label="Previous featured example">← Previous</button><button id="featured-next" aria-label="Next featured example">Next →</button></div></div>
-      <div id="main-comparison" role="tabpanel" aria-labelledby="tab-ll"></div>
+      <div class="featured-navigation"><p id="featured-count" aria-live="polite"></p></div>
+      <div class="case-carousel">
+        <button id="featured-previous" class="carousel-arrow carousel-previous" type="button" aria-label="Previous featured example" aria-controls="main-comparison"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m14 6-6 6 6 6"/></svg></button>
+        <div id="main-comparison" role="tabpanel" aria-labelledby="tab-ll"></div>
+        <button id="featured-next" class="carousel-arrow carousel-next" type="button" aria-label="Next featured example" aria-controls="main-comparison"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m10 6 6 6-6 6"/></svg></button>
+      </div>
       <div id="featured-examples" class="featured-examples" aria-label="Featured examples"></div>
       <p class="under-note">Preview frames: 30 s. Playback starts at 0:00. Original videos · 832 × 480 · 16 FPS · four denoising steps.</p>
     </section>
@@ -45,7 +49,12 @@
       <figure class="paper-figure"><a href="assets/figures/motivation.png" target="_blank" rel="noopener" aria-label="Open motivation figure at full resolution"><img src="assets/figures/motivation.png" alt="Motivation for OPSD-V: the student uses generated temporal history while real-video context supplies a cleaner teacher cache. Below, LongLive rollouts compare generated and data context." loading="lazy"></a></figure>
       <div class="subsection-heading"><h3>LongLive Before Post-Training</h3><label class="select-label">Example <select id="motivation-select" aria-label="Motivation example"></select></label></div>
       <p class="experiment-description"><strong>Experimental setup.</strong> Both rollouts initialize their KV caches with the same real-video first chunk. The baseline then builds its history from generated chunks. In the intervention, older cached history is replaced with KV features computed from the corresponding real-video chunks, while the latest model-generated chunk is retained for autoregressive continuation. Model parameters and the four-step sampler remain unchanged. The source video is shown as a reference.</p>
-      <div id="motivation-comparison"></div>
+      <div class="featured-navigation"><p id="motivation-count" aria-live="polite"></p></div>
+      <div class="case-carousel">
+        <button id="motivation-previous" class="carousel-arrow carousel-previous" type="button" aria-label="Previous cache-intervention example" aria-controls="motivation-comparison"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m14 6-6 6 6 6"/></svg></button>
+        <div id="motivation-comparison"></div>
+        <button id="motivation-next" class="carousel-arrow carousel-next" type="button" aria-label="Next cache-intervention example" aria-controls="motivation-comparison"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m10 6 6 6-6 6"/></svg></button>
+      </div>
       <p class="experiment-description experiment-observation"><strong>Observation.</strong> The more stable rollout suggests that degradation in generated cache history contributes to long-horizon errors. This motivates using real-video context to construct cleaner teacher targets during OPSD-V training. At deployment, OPSD-V retains the original inference procedure without this real-video cache intervention.</p>
     </section>
 
@@ -72,8 +81,12 @@
     <section id="ablations" class="section">
       <div class="section-heading"><div><p class="eyebrow">05 / Ablation results</p><h2>Ablation Study</h2></div></div>
       <p class="lead">We evaluate three components of OPSD-V on LongLive: the prediction space, the supervised denoising steps, and the teacher-cache update. All variants retain the original four-step inference procedure.</p>
-      <div class="featured-navigation"><p id="ablation-count" aria-live="polite"></p><div><button id="ablation-previous" aria-label="Previous ablation example">← Previous</button><button id="ablation-next" aria-label="Next ablation example">Next →</button></div></div>
-      <div id="ablation-comparison"></div>
+      <div class="featured-navigation"><p id="ablation-count" aria-live="polite"></p></div>
+      <div class="case-carousel">
+        <button id="ablation-previous" class="carousel-arrow carousel-previous" type="button" aria-label="Previous ablation example" aria-controls="ablation-comparison"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m14 6-6 6 6 6"/></svg></button>
+        <div id="ablation-comparison"></div>
+        <button id="ablation-next" class="carousel-arrow carousel-next" type="button" aria-label="Next ablation example" aria-controls="ablation-comparison"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m10 6 6 6-6 6"/></svg></button>
+      </div>
       <div id="ablation-examples" class="featured-examples ablation-examples" role="group" aria-label="Ablation examples"></div>
       <p class="under-note">Each comparison shows the first 30 seconds with the same prompt and seed across all four variants. Preview frames are at 15 s; playback starts at 0:00.</p>
       <details id="ablation-detail" class="details"><summary id="ablation-detail-summary">Enlarged details</summary><div><figure class="paper-figure"><a id="ablation-detail-link" target="_blank" rel="noopener" aria-label="Open selected ablation detail figure at full resolution"><img id="ablation-detail-image" alt="" loading="lazy"></a><figcaption id="ablation-detail-caption"></figcaption></figure></div></details>
@@ -92,8 +105,12 @@
     <section id="gradient-comparison" class="section">
       <div class="section-heading"><div><p class="eyebrow">07 / Further baseline comparison</p><h2>Comparison with Self Gradient Forcing</h2></div></div>
       <p class="lead">We compare Self Gradient Forcing (SGF, chunkwise EMA) with Self-Forcing + OPSD-V on the same prompts. Our results use seed 1. The selected examples highlight visual quality, motion dynamics, or both.</p>
-      <div class="featured-navigation"><p id="gradient-count" aria-live="polite"></p><div><button id="gradient-previous" aria-label="Previous SGF comparison">← Previous</button><button id="gradient-next" aria-label="Next SGF comparison">Next →</button></div></div>
-      <div id="gradient-player"></div>
+      <div class="featured-navigation"><p id="gradient-count" aria-live="polite"></p></div>
+      <div class="case-carousel">
+        <button id="gradient-previous" class="carousel-arrow carousel-previous" type="button" aria-label="Previous SGF comparison" aria-controls="gradient-player"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m14 6-6 6 6 6"/></svg></button>
+        <div id="gradient-player"></div>
+        <button id="gradient-next" class="carousel-arrow carousel-next" type="button" aria-label="Next SGF comparison" aria-controls="gradient-player"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m10 6 6 6-6 6"/></svg></button>
+      </div>
       <div id="gradient-examples" class="featured-examples gradient-examples" role="group" aria-label="Self Gradient Forcing comparison examples"></div>
       <p id="gradient-note" class="under-note"></p>
     </section>
