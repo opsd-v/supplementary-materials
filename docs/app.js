@@ -958,7 +958,7 @@ const ablations = [
     "values": {
       "quality6": "0.7923",
       "dynamic5s": "0.5646",
-      "semantic6": "0.3915"
+      "semantic6": "0.5124"
     }
   },
   {
