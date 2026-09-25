@@ -8,8 +8,8 @@
   <meta name="description" content="OPSD-V: real long-video context for on-policy post-training of few-step autoregressive video generators. Anonymous supplementary results.">
   <title>OPSD-V · Anonymous Supplementary Results</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=models-arrows-20260924">
-  <script defer src="app.js?v=models-arrows-20260924"></script>
+  <link rel="stylesheet" href="styles.css?v=cache-latest-20260925">
+  <script defer src="app.js?v=cache-latest-20260925"></script>
   <link rel="preconnect" href="https://opsd-v.github.io" crossorigin>
 </head>
 <body>
@@ -93,6 +93,18 @@
       <div class="method-steps ablation-notes"><article><h3>Prediction Space</h3><p>Replacing velocity matching with clean-latent (x₀) matching reduces Quality and Dynamic Degree.</p></article><article><h3>Denoising-Step Supervision</h3><p>Supervising only the first denoising step leaves the remaining three steps without direct supervision.</p></article><article><h3>Teacher-Cache Update</h3><p>Using the student’s latest chunk in the teacher cache yields weaker local detail than the teacher’s own clean estimate.</p></article></div>
       <div id="ablation-table" class="table-wrap"></div>
       <p class="table-note"><span class="best">Red</span>: best. <span class="second">Blue</span>: second-best, within each backbone. ↑ Higher is better. Scores are averaged equally over the two benchmarks.</p>
+      <div id="cache-latest-ablation" class="cache-latest-ablation" aria-labelledby="cache-latest-title">
+        <div class="subsection-heading"><h3 id="cache-latest-title">Replacing the Latest History Chunk</h3><label class="select-label">Example <select id="cache-latest-select" aria-label="Latest-history cache example"></select></label></div>
+        <p class="experiment-description"><strong>Training-free comparison.</strong> We compare three cache policies using the original LongLive model and its released LoRA, without parameter updates. All branches use the same real first chunk, text condition, Gaussian noise, and four-step sampler. The baseline caches generated history. The second policy replaces older history with real-video context but retains the latest generated chunk; the third also replaces that latest history chunk with its corresponding real-video chunk. Only past chunks enter the cache: current and future real-video chunks are never supplied for prediction.</p>
+        <div class="featured-navigation"><p id="cache-latest-count" aria-live="polite"></p></div>
+        <div class="case-carousel">
+          <button id="cache-latest-previous" class="carousel-arrow carousel-previous" type="button" aria-label="Previous latest-history cache example" aria-controls="cache-latest-comparison"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m14 6-6 6 6 6"/></svg></button>
+          <div id="cache-latest-comparison"></div>
+          <button id="cache-latest-next" class="carousel-arrow carousel-next" type="button" aria-label="Next latest-history cache example" aria-controls="cache-latest-comparison"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="m10 6 6 6-6 6"/></svg></button>
+        </div>
+        <p class="under-note">Examples show the first 30 seconds of matched 60.56-second rollouts with seed 0. The motorcyclist example extends to 45 seconds. All three videos share one timeline.</p>
+        <p class="experiment-description experiment-observation">In the motorcyclist example, all-real history introduces an abrupt pose and background change near 39.6 seconds. Keeping the latest generated chunk gives smoother continuation at this boundary. The corresponding real-video context is continuous.</p>
+      </div>
     </section>
 
     <section id="more" class="section">

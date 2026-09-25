@@ -56,3 +56,7 @@
 .carousel-arrow:active{background:#e4f0e9}
 .carousel-arrow:disabled{background:#f9fbfa;box-shadow:none}
 @media(max-width:700px){.carousel-arrow{width:44px;height:56px}.carousel-previous{left:-12px}.carousel-next{right:-12px}.carousel-arrow svg{width:24px;height:24px}}
+
+.cache-latest-ablation{margin-top:38px;padding-top:8px;border-top:1px solid var(--line)}
+.cache-latest-ablation .video-label{align-items:flex-start;flex-direction:column;gap:2px;min-height:52px}
+@media(max-width:600px){.cache-latest-ablation .video-label{min-height:42px;justify-content:center}}

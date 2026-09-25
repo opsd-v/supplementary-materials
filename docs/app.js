@@ -1186,6 +1186,140 @@ const gradientComparisons = [
   }
 ];
 
+// Fresh matched rollouts; the original motivation examples remain unchanged.
+const cacheLatestComparisons = [
+  {
+    "title": "Motorcyclist gesture",
+    "meta": "LongLive · training-free · seed 0",
+    "prompt": "A person wearing a black T-shirt with the text \"Bright Eyes\" and a white helmet with a reflective visor is riding a motorcycle. The background shows a suburban area with trees, houses, and power lines under a partly cloudy sky. The person raises their arms and then lowers them while riding.",
+    "duration": 45,
+    "videos": [
+      {
+        "label": "Generated history",
+        "note": "Baseline",
+        "src": "assets/videos/cache-latest-gt/000003-generated.mp4",
+        "poster": "assets/videos/cache-latest-gt/000003-generated.jpg"
+      },
+      {
+        "label": "Retain generated latest",
+        "note": "Older history: real video",
+        "src": "assets/videos/cache-latest-gt/000003-keep_latest.mp4",
+        "poster": "assets/videos/cache-latest-gt/000003-keep_latest.jpg"
+      },
+      {
+        "label": "Replace latest with real",
+        "note": "All history: real video",
+        "src": "assets/videos/cache-latest-gt/000003-all_gt.mp4",
+        "poster": "assets/videos/cache-latest-gt/000003-all_gt.jpg"
+      }
+    ]
+  },
+  {
+    "title": "Aerial beach scene",
+    "meta": "LongLive · training-free · seed 0",
+    "prompt": "An aerial view of a beach scene on a clear day, with a bright blue sky and a few scattered white clouds. Crowds fill the beach: some people rest under umbrellas while others walk along the shoreline. The water is clear turquoise, the sand is pale beige, and tall buildings line the coast, including a prominent white building. Palm trees surround the beach as gentle waves wash onto the shore.",
+    "duration": 30,
+    "videos": [
+      {
+        "label": "Generated history",
+        "note": "Baseline",
+        "src": "assets/videos/cache-latest-gt/000002-generated.mp4",
+        "poster": "assets/videos/cache-latest-gt/000002-generated.jpg"
+      },
+      {
+        "label": "Retain generated latest",
+        "note": "Older history: real video",
+        "src": "assets/videos/cache-latest-gt/000002-keep_latest.mp4",
+        "poster": "assets/videos/cache-latest-gt/000002-keep_latest.jpg"
+      },
+      {
+        "label": "Replace latest with real",
+        "note": "All history: real video",
+        "src": "assets/videos/cache-latest-gt/000002-all_gt.mp4",
+        "poster": "assets/videos/cache-latest-gt/000002-all_gt.jpg"
+      }
+    ]
+  },
+  {
+    "title": "Bird in rocky stream",
+    "meta": "LongLive · training-free · seed 0",
+    "prompt": "A small bird with dark plumage, likely a crow or raven, is seen in a shallow, rocky stream surrounded by lush greenery. The bird is initially standing on a rock in the stream, then it moves through the water, splashing and creating ripples. The background consists of dense foliage and moss-covered rocks, with sunlight filtering through the trees and casting a warm glow on the scene. The bird continues to move through the water, occasionally flapping its wings and adjusting its position.",
+    "duration": 30,
+    "videos": [
+      {
+        "label": "Generated history",
+        "note": "Baseline",
+        "src": "assets/videos/cache-latest-gt/000004-generated.mp4",
+        "poster": "assets/videos/cache-latest-gt/000004-generated.jpg"
+      },
+      {
+        "label": "Retain generated latest",
+        "note": "Older history: real video",
+        "src": "assets/videos/cache-latest-gt/000004-keep_latest.mp4",
+        "poster": "assets/videos/cache-latest-gt/000004-keep_latest.jpg"
+      },
+      {
+        "label": "Replace latest with real",
+        "note": "All history: real video",
+        "src": "assets/videos/cache-latest-gt/000004-all_gt.mp4",
+        "poster": "assets/videos/cache-latest-gt/000004-all_gt.jpg"
+      }
+    ]
+  },
+  {
+    "title": "Mountain village flyover",
+    "meta": "LongLive · training-free · seed 0",
+    "prompt": "Aerial views of a traditional village nestled in a mountainous region, featuring white buildings with black roofs. The village is surrounded by lush greenery and autumn-colored trees, with large trees displaying vibrant orange and yellow leaves. The village is densely packed with closely spaced buildings, some with small courtyards or gardens. The surrounding landscape includes rolling hills and fields, with a clear sky above. The video captures the village from various angles, showing the layout and architecture of the buildings, as well as the natural environment surrounding it.",
+    "duration": 30,
+    "videos": [
+      {
+        "label": "Generated history",
+        "note": "Baseline",
+        "src": "assets/videos/cache-latest-gt/000006-generated.mp4",
+        "poster": "assets/videos/cache-latest-gt/000006-generated.jpg"
+      },
+      {
+        "label": "Retain generated latest",
+        "note": "Older history: real video",
+        "src": "assets/videos/cache-latest-gt/000006-keep_latest.mp4",
+        "poster": "assets/videos/cache-latest-gt/000006-keep_latest.jpg"
+      },
+      {
+        "label": "Replace latest with real",
+        "note": "All history: real video",
+        "src": "assets/videos/cache-latest-gt/000006-all_gt.mp4",
+        "poster": "assets/videos/cache-latest-gt/000006-all_gt.jpg"
+      }
+    ]
+  },
+  {
+    "title": "Forested road aerial view",
+    "meta": "LongLive · training-free · seed 0",
+    "prompt": "The video provides an aerial view of a forested area with a winding road cutting through it. The road is surrounded by dense greenery, with various shades of green indicating different types of trees and vegetation. A few houses are visible, with one having a dark roof and another with a lighter-colored roof. The houses are nestled among the trees, with driveways leading up to them. The road curves and bends, creating a path that weaves through the forest. The colors are primarily green from the trees, with the road appearing as a dark, linear path. The video captures the layout and structure of the area, including the road, houses, and surrounding forest.",
+    "duration": 30,
+    "videos": [
+      {
+        "label": "Generated history",
+        "note": "Baseline",
+        "src": "assets/videos/cache-latest-gt/000007-generated.mp4",
+        "poster": "assets/videos/cache-latest-gt/000007-generated.jpg"
+      },
+      {
+        "label": "Retain generated latest",
+        "note": "Older history: real video",
+        "src": "assets/videos/cache-latest-gt/000007-keep_latest.mp4",
+        "poster": "assets/videos/cache-latest-gt/000007-keep_latest.jpg"
+      },
+      {
+        "label": "Replace latest with real",
+        "note": "All history: real video",
+        "src": "assets/videos/cache-latest-gt/000007-all_gt.mp4",
+        "poster": "assets/videos/cache-latest-gt/000007-all_gt.jpg"
+      }
+    ]
+  }
+];
+
 const ablationExamples = [
   {
     "title": "Train Crossing a Bridge",
@@ -1949,6 +2083,14 @@ const nativeComparisonRoot = ['localhost','127.0.0.1','[::1]'].includes(location
 for (const item of gradientComparisons) {
   for (const video of item.videos) video.src = nativeComparisonRoot + video.src.split('?')[0].split('/').pop();
 }
+const nativeCacheLatestRoot = ['localhost','127.0.0.1','[::1]'].includes(location.hostname)
+  ? 'assets/videos/cache-latest-gt/'
+  : 'https://opsd-v.github.io/supplementary-materials/assets/videos/cache-latest-gt/';
+for (const item of cacheLatestComparisons) {
+  for (const video of item.videos) {
+    video.src = nativeCacheLatestRoot + video.src.split('?')[0].split('/').pop();
+  }
+}
 if (typeof demoOverview !== 'undefined') {
   const demoRoot = ['localhost','127.0.0.1','[::1]'].includes(location.hostname)
     ? 'assets/videos/demo/' : 'https://opsd-v.github.io/supplementary-materials/assets/videos/demo/';
@@ -2125,6 +2267,23 @@ $('#ablation-examples').addEventListener('keydown',e=>{
 $('#ablation-previous').addEventListener('click',()=>selectAblation(ablationIndex-1));
 $('#ablation-next').addEventListener('click',()=>selectAblation(ablationIndex+1));
 selectAblation(0);
+
+let cacheLatestIndex=0;
+const cacheLatestSelect=$('#cache-latest-select');
+cacheLatestSelect.innerHTML=cacheLatestComparisons.map((item,i)=>`<option value="${i}">${escape(item.title)}</option>`).join('');
+function selectCacheLatest(index){
+  if(index<0||index>=cacheLatestComparisons.length)return;
+  cacheLatestIndex=index;
+  cacheLatestSelect.value=String(index);
+  replaceComparison($('#cache-latest-comparison'),cacheLatestComparisons[index],'triple');
+  $('#cache-latest-count').textContent=`Example ${index+1} of ${cacheLatestComparisons.length}`;
+  $('#cache-latest-previous').disabled=index===0;
+  $('#cache-latest-next').disabled=index===cacheLatestComparisons.length-1;
+}
+cacheLatestSelect.addEventListener('change',()=>selectCacheLatest(Number(cacheLatestSelect.value)));
+$('#cache-latest-previous').addEventListener('click',()=>selectCacheLatest(cacheLatestIndex-1));
+$('#cache-latest-next').addEventListener('click',()=>selectCacheLatest(cacheLatestIndex+1));
+selectCacheLatest(0);
 
 function renderTable(root,rows,caption,groups){
   const keys=['quality6','dynamic5s','semantic6'];
