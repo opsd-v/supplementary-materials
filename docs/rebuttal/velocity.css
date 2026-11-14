@@ -1,0 +1,58 @@
+#teacher-velocity { padding-top: 1.3rem; }
+#teacher-velocity h3 { font-size: clamp(1.25rem, 2.5vw, 1.65rem); line-height: 1.2; }
+.cache-window {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .5rem;
+  margin: .9rem 0;
+  padding: 0;
+  list-style: none;
+}
+.cache-window li {
+  padding: .65rem;
+  border: 1px solid var(--rule);
+  border-radius: .35rem;
+  background: #fff;
+  line-height: 1.35;
+}
+.cache-window strong, .cache-window span { display: block; }
+.cache-window strong { margin-bottom: .25rem; font-size: .85rem; }
+.cache-window span { color: var(--muted); font-size: .77rem; }
+.cache-window .real-history { background: var(--panel); border-color: #8eb9a4; }
+.velocity-controls {
+  display: flex;
+  gap: .4rem .65rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.velocity-controls label { font-size: .85rem; color: var(--muted); }
+.velocity-controls select { padding: .2rem .45rem; }
+.velocity-buttons { display: flex; flex-wrap: wrap; gap: .35rem; }
+.velocity-buttons button[aria-pressed=true] {
+  background: #e5eefb;
+  border-color: #9bb7db;
+  color: #1b4d84;
+  font-weight: 650;
+}
+.velocity-note { margin: .45rem 0 .6rem; color: var(--muted); font-size: .86rem; }
+.velocity-panel { margin-top: 1rem; padding-top: .85rem; border-top: 1px solid var(--rule); }
+.velocity-panel h6 { margin: 0; font-size: 1rem; }
+.velocity-overview { margin-inline: 0; }
+.velocity-overview h5 { margin: 0; font-size: 1.12rem; }
+#velocity-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: .5rem 0;
+  border: 1px solid var(--rule);
+  border-radius: .35rem;
+  background: #fff;
+}
+.velocity-clips { margin-top: .65rem; }
+.velocity-frames > figcaption { color: var(--muted); font-size: .81rem; margin: .25rem 0 .5rem; }
+.velocity-frames .video-pair figure { overflow: hidden; border: 1px solid var(--rule); border-radius: .4rem; }
+.velocity-frames img { display: block; width: 100%; aspect-ratio: 832 / 480; object-fit: contain; background: var(--panel); }
+.velocity-frames figure figcaption { padding: .3rem .5rem; font-size: .78rem; font-weight: 650; }
+@media (max-width: 38rem) {
+  .cache-window { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
