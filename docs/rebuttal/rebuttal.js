@@ -71,8 +71,6 @@ function pairedPlayer(root) {
   let playing = false;
   let scrubbing = false;
   let seekTarget = 0;
-  let seekDownload;
-  const seekableCopies = new Map();
   let retryTimer;
   let automaticRetry = false;
   let revision = 0;
@@ -107,62 +105,23 @@ function pairedPlayer(root) {
 
   function seek(time) {
     seekTarget = Math.max(0, Math.min(time, duration()));
-    updateTime(seekTarget);
-    if (seekDownload) return;
     const ready = videos.filter(video => video.readyState >= HTMLMediaElement.HAVE_METADATA && !video.error);
-    if (seekTarget && ready.length < videos.length) return;
-    const unseekable = seekTarget ? ready.filter(video => {
-      const range = video.seekable;
-      return !seekableCopies.has(video) && range.length > 0 && range.end(range.length - 1) === 0;
-    }) : [];
-    if (unseekable.length) {
-      prepareSeekableCopies(unseekable);
-    } else {
-      for (const video of ready) video.currentTime = Math.min(seekTarget, video.duration);
+    if (seekTarget && ready.length < videos.length) {
+      updateTime(seekTarget);
+      return;
     }
-  }
-
-  // The host sometimes ignores Range. Only fetch a seekable copy after an explicit jump.
-  async function prepareSeekableCopies(unseekable) {
-    const download = new AbortController();
-    const { signal } = download;
-    seekDownload = download;
-    for (const video of videos) video.pause();
-    setStatus('Buffering the selected position…');
-    try {
-      const blobs = await Promise.all(unseekable.map(async video => {
-        const response = await fetch(video.currentSrc, { signal });
-        if (!response.ok) throw new Error(`Video download failed (${response.status})`);
-        return response.blob();
-      }));
-      if (signal.aborted) return;
-      await Promise.all(unseekable.map((video, index) => {
-        const url = URL.createObjectURL(blobs[index]);
-        seekableCopies.set(video, url);
-        return new Promise((resolve, reject) => {
-          video.addEventListener('loadedmetadata', resolve, { once: true, signal });
-          video.addEventListener('error', reject, { once: true, signal });
-          signal.addEventListener('abort', reject, { once: true });
-          video.src = url;
-        });
-      }));
-      seekDownload = undefined;
-      seek(seekTarget);
-      setStatus();
-      if (playing) {
-        const current = revision;
-        await Promise.all(videos.map(video => video.play())).catch(() => {
-          if (current !== revision) return;
-          stop();
-          setStatus(`Select Play ${playbackGroup} to resume.`);
-        });
-      }
-    } catch {
-      if (signal.aborted) return;
-      stop();
-      releaseSources();
-      setStatus(`The requested position could not be loaded. Select Play ${playbackGroup} to retry.`);
+    const cannotSeek = seekTarget && ready.some(video => {
+      const ranges = video.seekable;
+      return ranges.length > 0 && ranges.end(ranges.length - 1) === 0;
+    });
+    if (cannotSeek) {
+      seekTarget = 0;
+      updateTime(first.currentTime);
+      setStatus('The video host did not allow this jump. Playback can continue from the current position.');
+      return;
     }
+    for (const video of ready) video.currentTime = Math.min(seekTarget, video.duration);
+    updateTime(seekTarget);
   }
 
   function stop() {
@@ -176,18 +135,12 @@ function pairedPlayer(root) {
   }
 
   function releaseSources() {
-    if (seekDownload) {
-      seekDownload.abort();
-      seekDownload = undefined;
-    }
     for (const video of videos) {
       if (video.hasAttribute('src')) {
         video.removeAttribute('src');
         video.load();
       }
     }
-    for (const url of seekableCopies.values()) URL.revokeObjectURL(url);
-    seekableCopies.clear();
   }
 
   function setStatus(message = '') {
@@ -196,8 +149,8 @@ function pairedPlayer(root) {
   }
 
   function leavePlayer() {
-    if (!seekDownload && first.currentTime > 0) seekTarget = first.currentTime;
-    const wasWaiting = retryTimer !== undefined || seekDownload;
+    if (first.currentTime > 0) seekTarget = first.currentTime;
+    const wasWaiting = retryTimer !== undefined;
     stop();
     releaseSources();
     if (wasWaiting) setStatus();
@@ -234,17 +187,15 @@ function pairedPlayer(root) {
     setStatus();
     playing = true;
     play.textContent = `Pause ${playbackGroup}`;
-    if (seekDownload) return;
     media.forEach(({ src }, index) => {
       const video = videos[index];
-      const source = seekableCopies.get(video) || src;
-      if (video.getAttribute('src') !== source) video.setAttribute('src', source);
+      if (video.getAttribute('src') !== src) video.setAttribute('src', src);
       else if (video.error) video.load();
     });
     try {
       await Promise.all(videos.map(video => video.play()));
     } catch (error) {
-      if (current !== revision || seekDownload) return;
+      if (current !== revision) return;
       if (error.name === 'NotAllowedError') {
         stop();
         setStatus(`Select Play ${playbackGroup} to resume.`);
@@ -280,18 +231,18 @@ function pairedPlayer(root) {
 
   for (const video of videos) {
     video.addEventListener('loadedmetadata', () => {
-      if (seekTarget && !seekDownload) seek(seekTarget);
-      if (!scrubbing) updateTime(seekTarget);
+      if (seekTarget) seek(seekTarget);
+      else if (!scrubbing) updateTime(0);
     });
     video.addEventListener('ended', () => stop());
     video.addEventListener('error', () => {
-      if (!seekDownload && video.error && video.hasAttribute('src')) {
+      if (video.error && video.hasAttribute('src')) {
         failed(video.error.code !== MediaError.MEDIA_ERR_DECODE);
       }
     });
   }
   first.addEventListener('timeupdate', () => {
-    if (scrubbing || seekDownload || !first.hasAttribute('src') || first.readyState < HTMLMediaElement.HAVE_METADATA) return;
+    if (scrubbing || !first.hasAttribute('src') || first.readyState < HTMLMediaElement.HAVE_METADATA) return;
     const time = first.currentTime;
     if (playing && !videos.some(video => video.seeking || video.readyState < 2)) {
       for (const video of followers) {
