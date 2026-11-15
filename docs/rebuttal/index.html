@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
   <title>OPSD-V · Rebuttal</title>
-  <link rel="stylesheet" href="qc5b.css">
+  <link rel="stylesheet" href="qc5b.css?v=lazy-media">
   <link rel="stylesheet" href="velocity.css">
   <style>
     :root {
@@ -89,7 +89,7 @@
       .review { grid-template-columns: 1fr; }
     }
   </style>
-  <script defer src="rebuttal.js"></script>
+  <script defer src="rebuttal.js?v=lazy-media"></script>
 </head>
 <body>
   <main>
@@ -144,12 +144,12 @@
                   <figure class="video-panel">
                     <figcaption>Self-Forcing</figcaption>
                     <video aria-label="Original Self-Forcing" muted playsinline preload="none"
-                      poster="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/016/Self-Forcing.jpg" src="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/016/Self-Forcing.mp4"></video>
+                      data-poster="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/016/Self-Forcing.jpg" data-src="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/016/Self-Forcing.mp4"></video>
                   </figure>
                   <figure class="video-panel">
                     <figcaption>Self-Forcing + OPSD-V</figcaption>
                     <video aria-label="Self-Forcing with OPSD-V" muted playsinline preload="none"
-                      poster="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/016/Self-Forcing-OPSD-V.jpg" src="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/016/Self-Forcing-OPSD-V.mp4"></video>
+                      data-poster="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/016/Self-Forcing-OPSD-V.jpg" data-src="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/016/Self-Forcing-OPSD-V.mp4"></video>
                   </figure>
                 </div>
                 <div class="playback">
@@ -217,12 +217,12 @@
                   <figure class="video-panel">
                     <figcaption>Self-Forcing</figcaption>
                     <video aria-label="Original Self-Forcing" muted playsinline preload="none"
-                      poster="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/019/Self-Forcing.jpg" src="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/019/Self-Forcing.mp4"></video>
+                      data-poster="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/019/Self-Forcing.jpg" data-src="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/019/Self-Forcing.mp4"></video>
                   </figure>
                   <figure class="video-panel">
                     <figcaption>Self-Forcing + OPSD-V</figcaption>
                     <video aria-label="Self-Forcing with OPSD-V" muted playsinline preload="none"
-                      poster="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/019/Self-Forcing-OPSD-V.jpg" src="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/019/Self-Forcing-OPSD-V.mp4"></video>
+                      data-poster="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/019/Self-Forcing-OPSD-V.jpg" data-src="/api/repo/OPSD-V-2027/file/rebuttal-media/qc5b/MeiBench/019/Self-Forcing-OPSD-V.mp4"></video>
                   </figure>
                 </div>
                 <div class="playback">
@@ -256,7 +256,7 @@
               <div class="case-heading">
                 <h5 id="velocity-overview-title">Velocity MSE across 50 training videos</h5>
               </div>
-              <img id="velocity-chart" src="/api/repo/OPSD-V-2027/file/rebuttal-media/velocity/velocity-mse-50-videos.svg" alt="Mean student–teacher velocity MSE over the rollout for each of four denoising steps across 50 sampled training videos. All four steps have higher mean MSE in the late segment than in the early segment.">
+              <img id="velocity-chart" data-src="/api/repo/OPSD-V-2027/file/rebuttal-media/velocity/velocity-mse-50-videos.svg" width="757" height="332" alt="Mean student–teacher velocity MSE over the rollout for each of four denoising steps across 50 sampled training videos. All four steps have higher mean MSE in the late segment than in the early segment.">
               <figcaption class="velocity-note">Lines show the mean at each chunk, weighted by the share of each data source in the training set. Shaded bands show pointwise 95% confidence intervals. Dashed lines mark 20 and 40 seconds.</figcaption>
             </figure>
 
@@ -320,8 +320,8 @@
                 <figure class="velocity-frames">
                   <figcaption id="velocity-frame-caption">Last frame of each clip</figcaption>
                   <div class="video-pair">
-                    <figure><img data-velocity-frame="student" alt="Student final frame" loading="lazy"><figcaption>Student</figcaption></figure>
-                    <figure><img data-velocity-frame="teacher" alt="Teacher final frame" loading="lazy"><figcaption>Teacher</figcaption></figure>
+                    <figure><img data-velocity-frame="student" alt="Student final frame"><figcaption>Student</figcaption></figure>
+                    <figure><img data-velocity-frame="teacher" alt="Teacher final frame"><figcaption>Teacher</figcaption></figure>
                   </div>
                 </figure>
               </div>
@@ -362,10 +362,18 @@
                 </div>
                 <p class="player-status" data-status role="status" hidden></p>
               </div>
-              <figure class="video-panel native-direct">
-                <figcaption id="native-direct-label">Multi-step AR teacher · direct 4-step inference</figcaption>
-                <video id="native-direct-video" aria-labelledby="native-direct-label" controls muted playsinline preload="none"></video>
-              </figure>
+              <div class="paired-player native-direct" data-player="native-direct" data-playback-group="video" data-duration="5.0625" role="group" aria-labelledby="native-direct-label">
+                <figure class="video-panel">
+                  <figcaption id="native-direct-label">Multi-step AR teacher · direct 4-step inference</figcaption>
+                  <video id="native-direct-video" muted playsinline preload="none"></video>
+                </figure>
+                <div class="playback">
+                  <button type="button" class="play" data-play>Play video</button>
+                  <input type="range" min="0" max="5.0625" step="0.0625" value="0" aria-label="Direct teacher video timeline">
+                  <output>0:00 / 0:05</output>
+                </div>
+                <p class="player-status" data-status role="status" hidden></p>
+              </div>
               <details class="qc5b-prompt"><summary>Full prompt</summary><p id="native-prompt"></p></details>
 
             </section>

@@ -4,6 +4,51 @@ function readData(name) {
   const data = catalog[name];
   return Promise.resolve({ ok: data != null, json: () => Promise.resolve(data) });
 }
+const MEDIA_SETTLE_MS = 120;
+const RETRY_DELAY_MS = 30_000;
+
+function whenMediaIsVisible(element, callback, threshold = 0.2) {
+  let visible = false;
+  let timer;
+  const answer = element.closest('.answer-disclosure');
+
+  function cancel() {
+    clearTimeout(timer);
+  }
+
+  function schedule() {
+    cancel();
+    if (!visible || (answer && !answer.open)) return;
+    timer = setTimeout(() => {
+      if (!answer || answer.open) callback();
+    }, MEDIA_SETTLE_MS);
+  }
+
+  const observer = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting && entry.intersectionRatio >= threshold;
+    schedule();
+  }, { threshold });
+  observer.observe(element);
+  answer?.addEventListener('toggle', schedule);
+  return { schedule, cancel };
+}
+
+const lazyImages = new WeakMap();
+
+function lazyMediaImage(image, url) {
+  let state = lazyImages.get(image);
+  if (!state) {
+    state = { url: '', visibility: whenMediaIsVisible(image, () => {
+      if (state.url && image.getAttribute('src') !== state.url) image.setAttribute('src', state.url);
+    }) };
+    lazyImages.set(image, state);
+  }
+  if (state.url === url) return;
+  state.url = url;
+  image.removeAttribute('src');
+  state.visibility.schedule();
+}
+
 function pairedPlayer(root) {
   const videos = [...root.querySelectorAll('video')];
   const [first, ...followers] = videos;
@@ -13,10 +58,27 @@ function pairedPlayer(root) {
   const timeline = root.querySelector('input[type=range]');
   const clock = root.querySelector('output');
   const status = root.querySelector('[data-status]');
+  const answer = root.closest('.answer-disclosure');
+  let media = videos.every(video => video.dataset.src)
+    ? videos.map(video => ({ src: video.dataset.src, poster: video.dataset.poster }))
+    : [];
   let playing = false;
   let scrubbing = false;
   let seekTarget = 0;
+  let retryTimer;
+  let automaticRetry = false;
   let revision = 0;
+
+  play.disabled = !media.length;
+  const posters = whenMediaIsVisible(root.querySelector('.video-panel') || root, () => {
+    if (playing || retryTimer !== undefined) return;
+    media.forEach(({ poster }, index) => {
+      const video = videos[index];
+      if (poster && !video.hasAttribute('src') && video.getAttribute('poster') !== poster) {
+        video.setAttribute('poster', poster);
+      }
+    });
+  });
 
   function duration() {
     const loaded = videos.map(video => video.duration).filter(Number.isFinite);
@@ -37,15 +99,31 @@ function pairedPlayer(root) {
 
   function seek(time) {
     seekTarget = Math.max(0, Math.min(time, duration()));
-    for (const video of videos) video.currentTime = seekTarget;
+    for (const video of videos) {
+      if (video.readyState >= HTMLMediaElement.HAVE_METADATA && !video.error) {
+        video.currentTime = seekTarget;
+      }
+    }
     updateTime(seekTarget);
   }
 
   function stop() {
     revision += 1;
+    clearTimeout(retryTimer);
+    retryTimer = undefined;
     playing = false;
     for (const video of videos) video.pause();
+    play.disabled = !media.length;
     play.textContent = `Play ${playbackGroup}`;
+  }
+
+  function releaseSources() {
+    for (const video of videos) {
+      if (video.hasAttribute('src')) {
+        video.removeAttribute('src');
+        video.load();
+      }
+    }
   }
 
   function setStatus(message = '') {
@@ -53,29 +131,70 @@ function pairedPlayer(root) {
     status.textContent = message;
   }
 
-  async function start() {
+  function leavePlayer() {
+    if (first.currentTime > 0) seekTarget = first.currentTime;
+    const wasWaiting = retryTimer !== undefined;
+    stop();
+    releaseSources();
+    if (wasWaiting) setStatus();
+  }
+
+  function failed(canRetry = true) {
+    if (!playing) return;
+    if (first.currentTime > 0) seekTarget = first.currentTime;
+    stop();
+    if (canRetry && !automaticRetry) {
+      play.disabled = true;
+      setStatus('Video temporarily unavailable. Retrying in 30 seconds…');
+      retryTimer = setTimeout(() => {
+        retryTimer = undefined;
+        play.disabled = false;
+        if (answer && !answer.open) {
+          setStatus();
+          return;
+        }
+        start(true);
+      }, RETRY_DELAY_MS);
+    } else {
+      setStatus(`A comparison video could not be loaded. Select Play ${playbackGroup} to retry.`);
+    }
+  }
+
+  async function start(retrying = false) {
+    if (!media.length || retryTimer !== undefined) return;
     if (videos.some(video => video.ended)) seek(0);
+    posters.cancel();
     root.dispatchEvent(new Event('paired-player-start', { bubbles: true }));
     const current = ++revision;
+    automaticRetry = retrying;
     setStatus();
     playing = true;
     play.textContent = `Pause ${playbackGroup}`;
+    media.forEach(({ src }, index) => {
+      const video = videos[index];
+      if (video.getAttribute('src') !== src) video.setAttribute('src', src);
+      else if (video.error) video.load();
+    });
     try {
       await Promise.all(videos.map(video => video.play()));
-    } catch {
-      if (current === revision) {
+    } catch (error) {
+      if (current !== revision) return;
+      if (error.name === 'NotAllowedError') {
         stop();
-        setStatus(`Playback could not start. Select Play ${playbackGroup} to retry.`);
+        setStatus(`Select Play ${playbackGroup} to resume.`);
+      } else {
+        failed(!videos.some(video => video.error?.code === MediaError.MEDIA_ERR_DECODE));
       }
     }
   }
 
   document.addEventListener('paired-player-start', event => {
-    if (event.target !== root && playing) stop();
+    if (event.target !== root && (playing || retryTimer !== undefined || first.hasAttribute('src'))) {
+      leavePlayer();
+    }
   });
-  const answer = root.closest('.answer-disclosure');
   answer?.addEventListener('toggle', () => {
-    if (!answer.open && playing) stop();
+    if (!answer.open) leavePlayer();
   });
   play.addEventListener('click', () => playing ? stop() : start());
   timeline.addEventListener('input', () => {
@@ -95,17 +214,18 @@ function pairedPlayer(root) {
 
   for (const video of videos) {
     video.addEventListener('loadedmetadata', () => {
-      if (seekTarget && !playing) video.currentTime = seekTarget;
-      if (!scrubbing) updateTime(playing ? first.currentTime : seekTarget);
+      if (seekTarget) video.currentTime = Math.min(seekTarget, video.duration);
+      if (!scrubbing) updateTime(seekTarget);
     });
-    video.addEventListener('ended', stop);
+    video.addEventListener('ended', () => stop());
     video.addEventListener('error', () => {
-      stop();
-      setStatus('A comparison video could not be loaded.');
+      if (video.error && video.hasAttribute('src')) {
+        failed(video.error.code !== MediaError.MEDIA_ERR_DECODE);
+      }
     });
   }
   first.addEventListener('timeupdate', () => {
-    if (scrubbing) return;
+    if (scrubbing || !first.hasAttribute('src') || first.readyState < HTMLMediaElement.HAVE_METADATA) return;
     const time = first.currentTime;
     if (playing && !videos.some(video => video.seeking || video.readyState < 2)) {
       for (const video of followers) {
@@ -119,25 +239,26 @@ function pairedPlayer(root) {
     stop,
     load(entries) {
       stop();
+      releaseSources();
       seekTarget = 0;
       scrubbing = false;
       setStatus();
-      videos.forEach((video, index) => {
-        const { path, label, poster = `${path}.jpg`, mediaVersion } = entries[index];
+      media = entries.map(({ path, label, poster = `${path}.jpg`, mediaVersion }, index) => {
+        const video = videos[index];
         const version = mediaVersion ? `?v=${encodeURIComponent(mediaVersion)}` : '';
-        video.poster = poster;
-        video.src = `${path}.mp4${version}`;
+        if (video.getAttribute('poster') !== poster) video.removeAttribute('poster');
         video.setAttribute('aria-label', label);
         video.closest('figure').querySelector('figcaption').textContent = label;
+        return { poster, src: `${path}.mp4${version}` };
       });
+      play.disabled = false;
+      posters.schedule();
       updateTime(0);
     },
   };
 }
 
-
 (() => {
-
 (() => {
   const models = {
     LongLive: { label: 'LongLive' },
@@ -213,11 +334,12 @@ function pairedPlayer(root) {
     .then(data => { prompts = data; showPrompt(); })
     .catch(() => {});
 })();
-
 })();
-(() => {
 
+(() => {
 const article = document.querySelector('#teacher-velocity');
+const chart = article.querySelector('#velocity-chart');
+lazyMediaImage(chart, chart.dataset.src);
 const full = pairedPlayer(article.querySelector('[data-player=velocity-full]'));
 const clip = pairedPlayer(article.querySelector('[data-player=velocity-clip]'));
 const selector = article.querySelector('#velocity-case-select');
@@ -244,7 +366,7 @@ function update({ changeFull = true } = {}) {
   }));
   for (const [index, role] of roles.entries()) {
     const frame = article.querySelector(`[data-velocity-frame=${role}]`);
-    frame.src = `${base}/${role}-${step}-${second}.jpg`;
+    lazyMediaImage(frame, `${base}/${role}-${step}-${second}.jpg`);
     frame.alt = `${labels[index]}, ${example.title}, Step ${step}, at ${(second + 3 - 1 / 16).toFixed(2)} seconds`;
   }
   caption.textContent = `Last frame of each clip · ${(second + 3 - 1 / 16).toFixed(2)} s`;
@@ -279,19 +401,14 @@ readData("velocity-data.json")
   .catch(() => {
     prompt.textContent = 'Comparison data could not be loaded. Reload the page to retry.';
   });
-
 })();
-(() => {
 
+(() => {
 const selector = document.querySelector('#native-case-select');
 const prompt = document.querySelector('#native-prompt');
 const studentRoot = document.querySelector('[data-player=native-students]');
-const directTeacher = document.querySelector('#native-direct-video');
 const students = pairedPlayer(studentRoot);
-const answer = studentRoot.closest('.answer-disclosure');
-answer.addEventListener('toggle', () => {
-  if (!answer.open) directTeacher.pause();
-});
+const directTeacher = pairedPlayer(document.querySelector('[data-player=native-direct]'));
 
 readData("native-teacher-data.json")
   .then(response => {
@@ -310,8 +427,7 @@ readData("native-teacher-data.json")
         { path: `${path}/native`, label: '+ Frozen AR teacher' },
         { path: opsdvPath, label: '+ OPSD-V' },
       ]);
-      directTeacher.poster = `${path}/native-4.jpg`;
-      directTeacher.src = `${path}/native-4.mp4`;
+      directTeacher.load([{ path: `${path}/native-4`, label: 'Multi-step AR teacher · direct 4-step inference' }]);
     }
     selector.addEventListener('change', showExample);
     showExample();
@@ -321,10 +437,9 @@ readData("native-teacher-data.json")
     status.textContent = 'Comparison data could not be loaded. Reload to retry.';
     status.hidden = false;
   });
-
 })();
-(() => {
 
+(() => {
 const backbone = document.querySelector('#long-backbone');
 const caseSelect = document.querySelector('#long-case-select');
 const prompt = document.querySelector('#long-case-prompt');
@@ -364,10 +479,9 @@ readData("long-video-baselines-data.json").then(response => {
   status.textContent = 'Comparison data could not be loaded. Reload to retry.';
   status.hidden = false;
 });
-
 })();
-(() => {
 
+(() => {
 const switchTimes = [10.3125, 20.0625, 29.8125, 40.3125, 50.0625];
 const featuredIds = ['repo-07', 'repo-05', 'repo-00', 'poker-release'];
 const selector = document.querySelector('#switch-case-select');
@@ -449,10 +563,9 @@ readData("prompt-switching-official-data.json")
     status.textContent = 'Prompt-switching examples could not be loaded. Reload to retry.';
     status.hidden = false;
   });
-
 })();
-(() => {
 
+(() => {
 const selector = document.querySelector('#real-history-case-select');
 const prompt = document.querySelector('#real-history-case-prompt');
 const root = document.querySelector('[data-player=real-history-proportion]');
@@ -531,10 +644,9 @@ readData("velocity-data.json")
     status.textContent = 'Student and teacher comparison data could not be loaded. Reload to retry.';
     status.hidden = false;
   });
-
 })();
-(() => {
 
+(() => {
 const backbone = document.querySelector('#all-real-backbone');
 const selector = document.querySelector('#all-real-case-select');
 const prompt = document.querySelector('#all-real-case-prompt');
@@ -574,8 +686,8 @@ readData("all-real-history-data.json")
     status.textContent = 'All-real comparison data could not be loaded. Reload to retry.';
     status.hidden = false;
   });
-
 })();
+
 (() => {
 const backbone = document.querySelector('#rollout-backbone');
 const segment = document.querySelector('#rollout-segment');
@@ -592,12 +704,13 @@ backbone.addEventListener('change', showScores);
 segment.addEventListener('change', showScores);
 showScores();
 
-})();
 function openLinkedAnswer() {
   const target = document.getElementById(location.hash.slice(1));
   const answer = target?.querySelector(':scope > .answer-disclosure');
   if (answer) answer.open = true;
 }
+
 openLinkedAnswer();
 window.addEventListener('hashchange', openLinkedAnswer);
+})();
 })();

@@ -54,7 +54,7 @@
   .native-video-grid, .real-history-video-grid { grid-template-columns: 1fr; }
 }
 .qc5b-case figure { margin: 0; min-width: 0; }
-.native-comparison figure.native-direct { width: min(100%, 18rem); margin-top: .85rem; }
+.native-comparison .native-direct { width: min(100%, 18rem); margin-top: .85rem; }
 .video-panel {
   display: flex;
   flex-direction: column;
