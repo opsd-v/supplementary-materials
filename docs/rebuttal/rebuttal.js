@@ -6,6 +6,9 @@ function readData(name) {
 }
 const MEDIA_SETTLE_MS = 120;
 const RETRY_DELAY_MS = 30_000;
+const DRIFT_PAUSE_SECONDS = 0.20;
+const DRIFT_RESUME_SECONDS = 0.08;
+const BUFFERING_MESSAGE = 'Buffering videos for synchronized playback…';
 
 // Use the stable media URL whose Range responses we verified on the anonymous host.
 function videoUrl(src, version = 'faststart') {
@@ -57,7 +60,7 @@ function lazyMediaImage(image, url) {
 
 function pairedPlayer(root) {
   const videos = [...root.querySelectorAll('video')];
-  const [first, ...followers] = videos;
+  const [first] = videos;
   const playbackGroup = root.dataset.playbackGroup || (videos.length === 2 ? 'both' : 'all');
   const fallbackDuration = Number(root.dataset.duration) || 60.5625;
   const play = root.querySelector('[data-play]');
@@ -70,10 +73,11 @@ function pairedPlayer(root) {
     : [];
   let playing = false;
   let scrubbing = false;
-  let seekTarget = 0;
+  let pendingSeek = null;
   let retryTimer;
   let automaticRetry = false;
   let revision = 0;
+  const held = new Set();
 
   play.disabled = !media.length;
   const posters = whenMediaIsVisible(root.querySelector('.video-panel') || root, () => {
@@ -103,25 +107,76 @@ function pairedPlayer(root) {
     clock.value = `${formatTime(time)} / ${formatTime(duration())}`;
   }
 
+  function sharedTime() {
+    return Math.min(...videos.map(video => video.currentTime));
+  }
+
   function seek(time) {
-    seekTarget = Math.max(0, Math.min(time, duration()));
-    const ready = videos.filter(video => video.readyState >= HTMLMediaElement.HAVE_METADATA && !video.error);
-    if (seekTarget && ready.length < videos.length) {
-      updateTime(seekTarget);
-      return;
-    }
-    const cannotSeek = seekTarget && ready.some(video => {
-      const ranges = video.seekable;
-      return ranges.length > 0 && ranges.end(ranges.length - 1) === 0;
-    });
-    if (cannotSeek) {
-      seekTarget = 0;
-      updateTime(first.currentTime);
+    pendingSeek = Math.max(0, Math.min(time, duration()));
+    updateTime(pendingSeek);
+    applyPendingSeek();
+    synchronize();
+  }
+
+  // Only a timeline change or jump button may write currentTime.
+  function applyPendingSeek() {
+    if (pendingSeek === null) return;
+    if (videos.some(video => video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA)) return;
+    const target = Math.min(pendingSeek, duration());
+    pendingSeek = null;
+    const seekable = ({ currentTime, seekable: ranges }) => {
+      if (Math.abs(currentTime - target) < 0.001) return true;
+      for (let index = 0; index < ranges.length; index += 1) {
+        if (ranges.start(index) <= target && target <= ranges.end(index)) return true;
+      }
+      return false;
+    };
+    if (!videos.every(seekable)) {
+      updateTime(sharedTime());
       setStatus('The video host did not allow this jump. Playback can continue from the current position.');
       return;
     }
-    for (const video of ready) video.currentTime = Math.min(seekTarget, video.duration);
-    updateTime(seekTarget);
+    for (const video of videos) video.currentTime = target;
+    held.clear();
+    setStatus();
+    updateTime(target);
+  }
+
+  function playVideo(video) {
+    const current = revision;
+    video.play().catch(error => {
+      if (current !== revision || error.name === 'AbortError') return;
+      if (error.name === 'NotAllowedError') {
+        stop();
+        setStatus(`Select Play ${playbackGroup} to resume.`);
+      } else {
+        failed(video.error?.code !== MediaError.MEDIA_ERR_DECODE);
+      }
+    });
+  }
+
+  function synchronize() {
+    if (!playing || videos.some(video => video.ended)) return;
+    const stalled = videos.some(video => video.seeking ||
+      video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA);
+    if (stalled) {
+      for (const video of videos) if (!video.paused) video.pause();
+      if (status.hidden) setStatus(BUFFERING_MESSAGE);
+      return;
+    }
+
+    if (status.textContent === BUFFERING_MESSAGE) setStatus();
+    const earliest = sharedTime();
+    for (const video of videos) {
+      const threshold = held.has(video) ? DRIFT_RESUME_SECONDS : DRIFT_PAUSE_SECONDS;
+      if (video.currentTime - earliest > threshold) {
+        held.add(video);
+        if (!video.paused) video.pause();
+      } else {
+        held.delete(video);
+        if (video.paused) playVideo(video);
+      }
+    }
   }
 
   function stop() {
@@ -129,18 +184,24 @@ function pairedPlayer(root) {
     clearTimeout(retryTimer);
     retryTimer = undefined;
     playing = false;
+    held.clear();
     for (const video of videos) video.pause();
+    if (status.textContent === BUFFERING_MESSAGE) setStatus();
     play.disabled = !media.length;
     play.textContent = `Play ${playbackGroup}`;
   }
 
   function releaseSources() {
+    pendingSeek = null;
+    scrubbing = false;
     for (const video of videos) {
       if (video.hasAttribute('src')) {
+        video.preload = 'none';
         video.removeAttribute('src');
         video.load();
       }
     }
+    updateTime(0);
   }
 
   function setStatus(message = '') {
@@ -149,7 +210,6 @@ function pairedPlayer(root) {
   }
 
   function leavePlayer() {
-    if (first.currentTime > 0) seekTarget = first.currentTime;
     const wasWaiting = retryTimer !== undefined;
     stop();
     releaseSources();
@@ -158,8 +218,8 @@ function pairedPlayer(root) {
 
   function failed(canRetry = true) {
     if (!playing) return;
-    if (first.currentTime > 0) seekTarget = first.currentTime;
     stop();
+    releaseSources();
     if (canRetry && !automaticRetry) {
       play.disabled = true;
       setStatus('Video temporarily unavailable. Retrying in 30 seconds…');
@@ -177,32 +237,24 @@ function pairedPlayer(root) {
     }
   }
 
-  async function start(retrying = false) {
+  function start(retrying = false) {
     if (!media.length || retryTimer !== undefined) return;
-    if (videos.some(video => video.ended)) seek(0);
+    if (videos.some(video => video.ended)) releaseSources();
     posters.cancel();
     root.dispatchEvent(new Event('paired-player-start', { bubbles: true }));
-    const current = ++revision;
+    revision += 1;
     automaticRetry = retrying;
     setStatus();
     playing = true;
     play.textContent = `Pause ${playbackGroup}`;
     media.forEach(({ src }, index) => {
       const video = videos[index];
+      video.preload = 'auto';
       if (video.getAttribute('src') !== src) video.setAttribute('src', src);
       else if (video.error) video.load();
     });
-    try {
-      await Promise.all(videos.map(video => video.play()));
-    } catch (error) {
-      if (current !== revision) return;
-      if (error.name === 'NotAllowedError') {
-        stop();
-        setStatus(`Select Play ${playbackGroup} to resume.`);
-      } else {
-        failed(!videos.some(video => video.error?.code === MediaError.MEDIA_ERR_DECODE));
-      }
-    }
+    applyPendingSeek();
+    synchronize();
   }
 
   document.addEventListener('paired-player-start', event => {
@@ -230,9 +282,15 @@ function pairedPlayer(root) {
   });
 
   for (const video of videos) {
-    video.addEventListener('loadedmetadata', () => {
-      if (seekTarget) seek(seekTarget);
-      else if (!scrubbing) updateTime(0);
+    video.addEventListener('canplay', () => {
+      applyPendingSeek();
+      synchronize();
+    });
+    video.addEventListener('waiting', synchronize);
+    video.addEventListener('seeked', synchronize);
+    video.addEventListener('timeupdate', () => {
+      synchronize();
+      if (!scrubbing && pendingSeek === null && first.hasAttribute('src')) updateTime(sharedTime());
     });
     video.addEventListener('ended', () => stop());
     video.addEventListener('error', () => {
@@ -241,24 +299,11 @@ function pairedPlayer(root) {
       }
     });
   }
-  first.addEventListener('timeupdate', () => {
-    if (scrubbing || !first.hasAttribute('src') || first.readyState < HTMLMediaElement.HAVE_METADATA) return;
-    const time = first.currentTime;
-    if (playing && !videos.some(video => video.seeking || video.readyState < 2)) {
-      for (const video of followers) {
-        if (Math.abs(video.currentTime - time) > 0.18) video.currentTime = time;
-      }
-    }
-    updateTime(time);
-  });
-
   return {
     stop,
     load(entries) {
       stop();
       releaseSources();
-      seekTarget = 0;
-      scrubbing = false;
       setStatus();
       media = entries.map(({ path, label, poster = `${path}.jpg`, mediaVersion }, index) => {
         const video = videos[index];
