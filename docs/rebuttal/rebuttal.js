@@ -121,7 +121,7 @@ function pairedPlayer(root) {
   // Only a timeline change or jump button may write currentTime.
   function applyPendingSeek() {
     if (pendingSeek === null) return;
-    if (videos.some(video => video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA)) return;
+    if (videos.some(video => !video.ended && video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA)) return;
     const target = Math.min(pendingSeek, duration());
     pendingSeek = null;
     const seekable = ({ currentTime, seekable: ranges }) => {
@@ -156,18 +156,23 @@ function pairedPlayer(root) {
   }
 
   function synchronize() {
-    if (!playing || videos.some(video => video.ended)) return;
-    const stalled = videos.some(video => video.seeking ||
+    if (!playing) return;
+    const unfinished = videos.filter(video => !video.ended);
+    if (!unfinished.length) {
+      stop();
+      return;
+    }
+    const stalled = unfinished.some(video => video.seeking ||
       video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA);
     if (stalled) {
-      for (const video of videos) if (!video.paused) video.pause();
+      for (const video of unfinished) if (!video.paused) video.pause();
       if (status.hidden) setStatus(BUFFERING_MESSAGE);
       return;
     }
 
     if (status.textContent === BUFFERING_MESSAGE) setStatus();
-    const earliest = sharedTime();
-    for (const video of videos) {
+    const earliest = Math.min(...unfinished.map(video => video.currentTime));
+    for (const video of unfinished) {
       const threshold = held.has(video) ? DRIFT_RESUME_SECONDS : DRIFT_PAUSE_SECONDS;
       if (video.currentTime - earliest > threshold) {
         held.add(video);
@@ -239,7 +244,7 @@ function pairedPlayer(root) {
 
   function start(retrying = false) {
     if (!media.length || retryTimer !== undefined) return;
-    if (videos.some(video => video.ended)) releaseSources();
+    if (videos.every(video => video.ended)) releaseSources();
     posters.cancel();
     root.dispatchEvent(new Event('paired-player-start', { bubbles: true }));
     revision += 1;
@@ -292,7 +297,7 @@ function pairedPlayer(root) {
       synchronize();
       if (!scrubbing && pendingSeek === null && first.hasAttribute('src')) updateTime(sharedTime());
     });
-    video.addEventListener('ended', () => stop());
+    video.addEventListener('ended', synchronize);
     video.addEventListener('error', () => {
       if (video.error && video.hasAttribute('src')) {
         failed(video.error.code !== MediaError.MEDIA_ERR_DECODE);
