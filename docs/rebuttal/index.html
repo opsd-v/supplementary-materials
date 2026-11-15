@@ -612,6 +612,7 @@
                   <tr><th scope="row">Overall consistency</th><td>0.2205</td><td>0.2204</td><td>0.2238</td><td>0.2224</td></tr>
                 </tbody>
               </table>
+              <p class="examples-finding long-score-note">Full-video scores follow the paper’s VBench-Long protocol. Segment scores, including the final-21-chunk table below, evaluate each segment as a separate video.</p>
             </section>
             <section class="qc5b-case" aria-labelledby="all-real-vbench-tail">
               <div class="case-heading">
@@ -642,7 +643,7 @@
                   <tr><th scope="row">Overall consistency</th><td>0.2101</td><td>0.2172</td><td>0.2114</td><td>0.2175</td></tr>
                 </tbody>
               </table>
-              <p class="examples-finding long-score-note">We evaluate chunks 61–81. Quality is the mean of its six components.</p>
+              <p class="examples-finding long-score-note">We evaluate chunks 61–81 as a separate video. Quality is the mean of its six components.</p>
             </section>
             <section class="qc5b-case" aria-label="Video examples">
               <label class="native-select">Backbone
@@ -674,7 +675,7 @@
           <details class="answer-disclosure">
             <summary><h3>How does quality change across the rollout and in the final 21 chunks?</h3></summary>
             <div class="qc5b-answer">
-              <p>We thank the reviewer for suggesting this fine-grained temporal analysis. We compare the base models with our OPSD-V checkpoints using the same random seed within each pair. We report six dimensions across the early, middle, and late thirds, as well as chunks 61–81, which extend beyond the 60-chunk training rollout.</p>
+              <p>We thank the reviewer for suggesting this fine-grained temporal analysis. We compare the base models with our OPSD-V checkpoints using the same random seed within each pair. We report six dimensions across the early, middle, and late thirds, as well as chunks 61–81, which extend beyond the 60-chunk training rollout. Each segment is evaluated as a separate video.</p>
               <p>The mean excluding Dynamic Degree declined from the early third to the final 21 chunks by <strong>0.0013</strong> with OPSD-V versus <strong>0.0075</strong> with base LongLive, and by <strong>0.0058</strong> versus <strong>0.0132</strong> on Self-Forcing. For both backbones, the paired 95% bootstrap confidence intervals (CIs) for the Imaging quality difference include zero in the early third and lie entirely above zero in the late third and the final 21 chunks.</p>
               <p>In the final 21 chunks, the mean excluding Dynamic Degree was higher by <strong>+0.00247</strong> (95% CI [−0.00090, +0.00570]) on LongLive and by <strong>+0.00587</strong> (95% CI [+0.00238, +0.00937]) on Self-Forcing. Dynamic Degree changed by <strong>+0.05342</strong> (95% CI [−0.00112, +0.10876]) and <strong>+0.01945</strong> (95% CI [−0.02356, +0.06268]), respectively. On both backbones, OPSD-V had higher Aesthetic quality and Imaging quality point estimates and slightly lower Subject consistency. Background consistency was slightly lower on LongLive and nearly unchanged on Self-Forcing.</p>
             </div>
