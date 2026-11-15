@@ -7,6 +7,12 @@ function readData(name) {
 const MEDIA_SETTLE_MS = 120;
 const RETRY_DELAY_MS = 30_000;
 
+// Use the stable media URL whose Range responses we verified on the anonymous host.
+function videoUrl(src, version = 'faststart') {
+  if (src.includes('?') || !version) return src;
+  return `${src}?v=${encodeURIComponent(version)}`;
+}
+
 function whenMediaIsVisible(element, callback, threshold = 0.2) {
   let visible = false;
   let timer;
@@ -60,7 +66,7 @@ function pairedPlayer(root) {
   const status = root.querySelector('[data-status]');
   const answer = root.closest('.answer-disclosure');
   let media = videos.every(video => video.dataset.src)
-    ? videos.map(video => ({ src: video.dataset.src, poster: video.dataset.poster }))
+    ? videos.map(video => ({ src: videoUrl(video.dataset.src), poster: video.dataset.poster }))
     : [];
   let playing = false;
   let scrubbing = false;
@@ -245,11 +251,10 @@ function pairedPlayer(root) {
       setStatus();
       media = entries.map(({ path, label, poster = `${path}.jpg`, mediaVersion }, index) => {
         const video = videos[index];
-        const version = mediaVersion ? `?v=${encodeURIComponent(mediaVersion)}` : '';
         if (video.getAttribute('poster') !== poster) video.removeAttribute('poster');
         video.setAttribute('aria-label', label);
         video.closest('figure').querySelector('figcaption').textContent = label;
-        return { poster, src: `${path}.mp4${version}` };
+        return { poster, src: videoUrl(`${path}.mp4`, mediaVersion) };
       });
       play.disabled = false;
       posters.schedule();
